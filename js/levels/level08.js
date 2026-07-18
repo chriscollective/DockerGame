@@ -5,6 +5,10 @@
   'use strict';
   var h = root.DG.h;
 
+  // 只有 FROM/COPY/ADD/RUN 會疊出檔案系統層；WORKDIR/EXPOSE/CMD/ENV 等是 metadata、不佔層
+  var LAYER_INSTS = { FROM: 1, COPY: 1, ADD: 1, RUN: 1 };
+  function isLayerInst(inst) { return !!LAYER_INSTS[inst]; }
+
   var CARDS = [
     { inst: 'FROM', text: 'FROM node:20', note: '地基：從一張基底藍圖開始' },
     { inst: 'WORKDIR', text: 'WORKDIR /app', note: '之後的操作都在這個艙房進行' },
@@ -71,9 +75,11 @@
       el.remove();
       var hint = slots.querySelector('.df-slot-hint');
       if (hint) { hint.remove(); }
-      var done = h('div', 'df-card',
+      var layerNo = placed.filter(function (c) { return isLayerInst(c.inst); }).length;
+      var noteHtml = isLayerInst(card.inst) ? ('layer ' + layerNo + '（唯讀層）') : 'metadata · 不佔層';
+      var done = h('div', 'df-card' + (isLayerInst(card.inst) ? '' : ' meta-card'),
         '<span class="df-inst">' + card.inst + '</span>' +
-        card.text.slice(card.inst.length) + '<div class="df-note">layer ' + placed.length + '</div>');
+        card.text.slice(card.inst.length) + '<div class="df-note">' + noteHtml + '</div>');
       done.style.cursor = 'default';
       slots.appendChild(done);
       root.DG.audio.play('place');
@@ -100,7 +106,13 @@
         '<span class="df-inst">' + card.inst + '</span>' + card.text.slice(card.inst.length) +
         '<div class="df-note">' + card.note + '</div>');
       el.draggable = true;
+      el.tabIndex = 0;
+      el.setAttribute('role', 'button');
+      el.setAttribute('aria-label', '指令卡 ' + card.text + '（按 Enter 放進 Dockerfile）');
       el.addEventListener('click', function () { tryPlace(card, el); });
+      el.addEventListener('keydown', function (ev) {
+        if (ev.key === 'Enter' || ev.key === ' ') { ev.preventDefault(); tryPlace(card, el); }
+      });
       el.addEventListener('dragstart', function (ev) {
         el.classList.add('dragging');
         ev.dataTransfer.setData('text/plain', card.text);
@@ -128,8 +140,9 @@
     ctx.overlay.appendChild(stack);
     buildResult.steps.forEach(function (s, i) {
       setTimeout(function () {
-        var brick = h('div', 'layer-brick' + (s.cached ? ' cached-brick' : ''),
-          (s.cached ? 'CACHED · ' : '') + s.step.text);
+        var layerStep = isLayerInst(s.step.inst);
+        var brick = h('div', 'layer-brick' + (s.cached ? ' cached-brick' : '') + (layerStep ? '' : ' meta-brick'),
+          (s.cached ? 'CACHED · ' : '') + s.step.text + (layerStep ? '' : '　(metadata·不佔層)'));
         stack.appendChild(brick);
         root.DG.audio.play(s.cached ? 'click' : 'place');
       }, i * (s.cached ? 110 : 380));
@@ -165,15 +178,16 @@
     terminal: true,
     story: [
       '你已經會「用」別人的藍圖了，今天升級——<b>自己設計藍圖</b>。',
-      '藍圖的設計稿叫 <code>Dockerfile</code>：一行一個指令，每行蓋出一個 layer（樓層）。',
+      '藍圖的設計稿叫 <code>Dockerfile</code>：一行一個指令，其中 FROM／COPY／RUN 這類會各疊出一層 layer（樓層）。',
       '風把我桌上的指令卡吹亂了！幫我把它們排回正確順序——順序錯了，蓋出來的藍圖會又慢又壞。'
     ],
     teach: {
       title: 'Dockerfile 與 layer cache',
       html: '<p>常用指令：<code>FROM</code> 基底藍圖、<code>WORKDIR</code> 工作目錄、<code>COPY</code> 搬檔案、' +
         '<code>RUN</code> 建造期執行、<code>EXPOSE</code> 標注 port、<code>CMD</code> 啟動指令。</p>' +
-        '<p>每一行 = 一個 <b>layer</b>。重 build 時，沒變動的層直接用 <b>cache</b>（秒過）；' +
-        '<b>一層變了，它之後的所有層都要重蓋</b>。</p>' +
+        '<p>其中 <code>FROM</code>（基底）、<code>COPY</code>／<code>ADD</code>（搬檔）、<code>RUN</code>（執行）會各疊一層<b>唯讀 layer</b>；' +
+        '<code>WORKDIR</code>／<code>EXPOSE</code>／<code>CMD</code> 只是設定（metadata），<b>不佔檔案系統層</b>。</p>' +
+        '<p>重 build 時，沒變動的層直接用 <b>cache</b>（秒過）；<b>一層變了，它之後的所有層都要重蓋</b>。</p>' +
         '<p>所以把「不常變的」放上面、「常變的」放下面——這就是先 COPY package.json 再 npm install 的理由。</p>',
       map: '<b>港口比喻</b>：Dockerfile＝藍圖設計稿；layer＝一層層疊起來的發光地基；cache＝已經蓋好、可直接重用的樓層。'
     },
@@ -187,7 +201,7 @@
           '中段順序的靈魂：COPY package.json . → RUN npm install → COPY . .（為了 cache）。',
           '完整順序：FROM → WORKDIR → COPY package.json . → RUN npm install → COPY . . → EXPOSE → CMD'],
         check: function (result, ctx) { return ctx.flags.dfOrdered; } },
-      { text: '執行 <code>docker build -t myapp .</code>，看 7 層地基逐層疊起',
+      { text: '執行 <code>docker build -t myapp .</code>，看它逐行建置（FROM／COPY／RUN 會疊出實體層）',
         hints: ['build 要給名字（-t）和建置目錄（.）。',
           '骨架：docker build -t _____ .（名字用 myapp，最後的點別忘）。',
           '完整指令：docker build -t myapp .'],

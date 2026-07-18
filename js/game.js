@@ -134,21 +134,37 @@
     var obj = current.def.objectives[current.objIdx];
     var ok = false;
     try { ok = !!obj.check(result, current.ctx); }
-    catch (e) { ok = false; }   // check 內部錯誤不讓遊戲 crash
+    catch (e) {
+      ok = false;   // check 內部錯誤不讓遊戲 crash，但要留痕跡以免關卡靜默卡死
+      if (root.console && console.warn) {
+        console.warn('[objective check error] level', current.def.id, 'obj', current.objIdx, e);
+      }
+    }
     if (ok) { objectiveDone(current.objIdx, result); }
   }
 
   function onCommand(result) {
     stage.applyEvents(result.events);
     if (result.tip) { showTip(result.tip); }
+    var before = current.objIdx;
+    checkObjective(result);
+    if (current.completed || current.objIdx > before) { current.offTopic = 0; return; }
+    // 指令沒推進目前的任務目標
     if (!result.ok) {
       current.wrongs++;
       if (current.wrongs >= CONFIG.WRONG_TRIES_BEFORE_HINT &&
           current.hintLevels[current.objIdx] === 0) {
         setTimeout(function () { revealHint(true); }, 350);
       }
+    } else {
+      // 指令成功但偏題：給免費的方向提醒（不扣星、不直接給答案），避免玩家卡住卻毫無回饋
+      current.offTopic = (current.offTopic || 0) + 1;
+      if (current.offTopic >= CONFIG.WRONG_TRIES_BEFORE_HINT &&
+          current.hintLevels[current.objIdx] === 0) {
+        current.offTopic = 0;
+        showTip('這個指令有跑成功，但還沒完成目前的「任務目標」。<br>再看一眼上方的任務目標，或按右上角 💡 要一個提示。');
+      }
     }
-    checkObjective(result);
   }
 
   // ---------- 過關 ----------
@@ -201,6 +217,7 @@
       hintLevels: def.objectives.map(function () { return 0; }),
       hintsUsed: 0,
       wrongs: 0,
+      offTopic: 0,
       completed: false,
       ctx: null
     };
@@ -227,6 +244,11 @@
       engine.takeEvents();   // 清掉開場預置產生的事件，別漏進第一個指令的結果
       stage.sync();
       renderQuest(def);
+      // 進關後把「任務目標」捲進視野，避免玩家沒發現摺線以下還有目標
+      setTimeout(function () {
+        var wrap = questScroll.querySelector('.objectives');
+        if (wrap && wrap.scrollIntoView) { wrap.scrollIntoView({ behavior: 'smooth', block: 'nearest' }); }
+      }, 1100);
       if (def.terminal) {
         terminal.setLocked(false);
         terminal.print('鯨魚港終端機 — 輸入 help 可查看目前學會的指令', 'dim');
@@ -241,7 +263,15 @@
   // ---------- 初始化 ----------
   function wireTopbar() {
     document.getElementById('btn-hint').addEventListener('click', function () { revealHint(false); });
-    document.getElementById('btn-map').addEventListener('click', goMap);
+    document.getElementById('btn-map').addEventListener('click', function () {
+      var inLevel = document.getElementById('screen-level').classList.contains('on');
+      if (inLevel && current && !current.completed) {
+        root.DG.screens.showConfirm('離開這一關？',
+          '目前這關的進度會重置，回港後要從頭再來一次。確定離開嗎？', goMap);
+      } else {
+        goMap();
+      }
+    });
     document.getElementById('btn-dex').addEventListener('click', goBadges);
     var muteBtn = document.getElementById('btn-mute');
     function renderMute() {

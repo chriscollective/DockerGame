@@ -40,9 +40,9 @@
         hints: ['docker ps 只列「運行中」的；要看全部得加一個旗標。',
           '旗標是 -a（all）：docker ps __。',
           '完整指令：docker ps -a'],
-        check: function (result) {
-          return result && result.ok && result.parsed.cmd === 'ps' &&
-            result.parsed.all && result.parsed.count >= 1;
+        check: function (result, ctx) {
+          return !!(result && result.ok && result.parsed.cmd === 'ps' && result.parsed.all &&
+            ctx.engine.state.containers.some(function (c) { return c.status === 'exited'; }));
         } }
     ]
   });
@@ -64,7 +64,8 @@
       html: '<p><b>image</b> 是唯讀藍圖；<b>registry</b>（如 Docker Hub）是放藍圖的倉庫。' +
         '<code>docker pull</code> 只下載、不啟動。</p>' +
         '<p>藍圖名字的完整格式是 <code>名字:tag</code>——tag 是版本標籤。' +
-        '不寫 tag 時 Docker 幫你補 <code>:latest</code>（「最新」，但正式環境要釘死版本！）</p>' +
+        '不寫 tag 時 Docker 幫你補 <code>:latest</code>——注意 <code>latest</code> 只是「預設標籤名」，' +
+        '不保證是最新版本，正式環境要釘死版本！</p>' +
         '<p>下載時的多條進度條 = image 的多個 <b>layer</b>（分層），之後蓋藍圖時會再深談。</p>',
       map: '<b>港口比喻</b>：registry＝遠方的藍圖總倉；pull＝派快船抄一份回本地藍圖架；tag＝藍圖的版本編號。'
     },

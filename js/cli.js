@@ -159,7 +159,12 @@
       var c = res.container;
       if (o.detach) { script.push({ t: 'line', text: c.id, cls: 'out' }); }
       else if (res.oneshot) { script = script.concat(lines(HELLO_TEXT, 'out')); }
-      else { script = script.concat(lines(c.logs, 'out')); }
+      else {
+        script = script.concat(lines(c.logs, 'out'));
+        script.push({ t: 'line',
+          text: '（沒加 -d：容器在前景執行，會佔住終端機直到 Ctrl-C——長駐服務通常加 -d 讓它在背景跑）',
+          cls: 'dim' });
+      }
       return okRes(parsed, script, { container: c, engineResult: res });
     }
 
@@ -357,12 +362,13 @@
       if (args[0] === 'create' && args[1]) {
         var res = engine.networkCreate(args[1]);
         if (!res.ok) { return errRes({ cmd: 'network-create', name: args[1] }, res.error, '這條航道已經存在了，直接用它就行。'); }
-        return okRes({ cmd: 'network-create', name: args[1] }, lines([hex(64)], 'out'), { network: res.network });
+        // 印出剛建立的 network 完整 ID（ls 會顯示它的前 12 碼，兩者一致）
+        return okRes({ cmd: 'network-create', name: args[1] }, lines([res.network.id], 'out'), { network: res.network });
       }
       if (args[0] === 'ls') {
         var head = pad('NETWORK ID', 15) + pad('NAME', 16) + pad('DRIVER', 10) + 'SCOPE';
         var body = engine.state.networks.map(function (n) {
-          return pad(n.id || hex(12), 15) + pad(n.name, 16) + pad(n.driver, 10) + 'local';
+          return pad(n.id ? n.id.slice(0, 12) : hex(12), 15) + pad(n.name, 16) + pad(n.driver, 10) + 'local';
         });
         return okRes({ cmd: 'network-ls' }, lines([head].concat(body), 'table'));
       }
@@ -410,6 +416,13 @@
         return errRes({ cmd: 'compose' }, 'unknown docker command: "compose ' + (args[0] || '') + '"',
           '這一戰用 docker compose up -d 出航。');
       }
+      if (args.indexOf('-d') < 0) {
+        // 真實 compose up 不加 -d 會 attach 全部服務日誌並卡住終端機——教學上要求用 -d
+        return okRes({ cmd: 'compose-up', detach: false }, lines([
+          '沒加 -d：docker compose up 會 attach 到所有服務、把日誌灌進終端機並卡住（要 Ctrl-C 才停）。',
+          '要讓整支艦隊在背景長駐，改用：docker compose up -d'
+        ], 'dim'));
+      }
       var res = engine.composeUp(st.composeProject);
       if (!res.ok) { return errRes({ cmd: 'compose-up' }, res.error); }
       var cr = res.created;
@@ -418,7 +431,7 @@
       cr.networks.forEach(function (nm) { script.push({ t: 'line', text: ' ✔ Network ' + pad(nm, 22) + ' Created', cls: 'ok' }); });
       cr.volumes.forEach(function (v) { script.push({ t: 'line', text: ' ✔ Volume ' + pad('"' + v + '"', 23) + ' Created', cls: 'ok' }); });
       cr.containers.forEach(function (c) { script.push({ t: 'line', text: ' ✔ Container ' + pad(c.name, 19) + ' Started', cls: 'ok' }); });
-      return okRes({ cmd: 'compose-up', detach: args.indexOf('-d') >= 0 }, script, { composeResult: res });
+      return okRes({ cmd: 'compose-up', detach: true }, script, { composeResult: res });
     }
 
     // ---------- help / 未知指令 ----------
@@ -472,6 +485,12 @@
       input = String(input || '').trim();
       if (st.shell) { return shellExec(input); }
       if (!input) { return okRes({ cmd: 'noop' }, []); }
+      var chain = splitChain(input);
+      if (chain) { return runChain(chain); }   // a && b、a ; b 串接
+      return execOne(input);
+    }
+
+    function execOne(input) {
       var argv = tokenize(input);
       var head = argv[0];
       if (head === 'clear') { return okRes({ cmd: 'clear' }, [], { clear: true }); }
@@ -481,6 +500,42 @@
         ? '手滑了——是 docker 才對。'
         : '本港的終端機聽得懂 docker 指令、help 和 clear。';
       return errRes({ cmd: 'not-found', head: head }, 'sh: ' + head + ': command not found', tip);
+    }
+
+    // 支援用 && 或 ; 串接多個指令（&& 遇錯即停、; 一律續跑，比照真實 shell）
+    function splitChain(input) {
+      var re = /\s*(&&|;)\s*/g;
+      var parts = [], seps = [], last = 0, m;
+      while ((m = re.exec(input))) {
+        parts.push(input.slice(last, m.index).trim());
+        seps.push(m[1]);
+        last = m.index + m[0].length;
+      }
+      if (!parts.length) { return null; }        // 沒有分隔符 → 單一指令
+      parts.push(input.slice(last).trim());
+      return { parts: parts, seps: seps };
+    }
+
+    function runChain(chain) {
+      var parts = chain.parts, seps = chain.seps;
+      var script = [], events = [], tip = null, last = null;
+      for (var i = 0; i < parts.length; i++) {
+        if (!parts[i]) { continue; }
+        var r = exec(parts[i]);                  // 遞迴：單一指令或進入 shell 都會被正確處理
+        last = r;
+        if (r.script) { script = script.concat(r.script); }
+        if (r.events) { events = events.concat(r.events); }
+        if (r.tip && !tip) { tip = r.tip; }
+        if (!r.ok && seps[i] === '&&') { break; } // && 短路：前一個失敗就停
+      }
+      if (!last) { return okRes({ cmd: 'noop' }, []); }
+      var merged = {};
+      Object.keys(last).forEach(function (k) { merged[k] = last[k]; });
+      merged.script = script;
+      merged.events = events;
+      merged.tip = tip;
+      merged.chained = true;
+      return merged;
     }
 
     function getPrompt() {

@@ -245,7 +245,7 @@
         } else {
           c.logs.push('[notify] boot...',
             '[notify] ERROR: environment variable MODE is not set',
-            '[notify] hint: check config.txt inside the container',
+            '[notify] hint: MODE comes from an env var (-e MODE=...), not from a file — config.txt explains',
             '[notify] service degraded — notifications are NOT being sent');
         }
       } else if (repo === 'harbor-db') {
@@ -254,7 +254,7 @@
         c.logs.push('/docker-entrypoint.sh: Configuration complete; ready for start up',
           '2026/07/17 00:00:01 [notice] 1#1: start worker processes');
       } else if (repo === 'webapp') {
-        c.logs.push('[webapp] up — waiting for db at http://db:5432');
+        c.logs.push('[webapp] up — waiting for db at db:5432 (tcp)');
       } else if (cat && cat.kind === 'oneshot') {
         c.logs.push('(hello-world output)');
       }
@@ -396,7 +396,7 @@
       if (findNetwork(name)) {
         return { ok: false, error: 'Error response from daemon: network with name ' + name + ' already exists' };
       }
-      var n = { name: name, driver: 'bridge', builtin: false, id: randHex(12) };
+      var n = { name: name, driver: 'bridge', builtin: false, id: randHex(64) };
       state.networks.push(n);
       emit('network:create', { network: n });
       return { ok: true, network: n };

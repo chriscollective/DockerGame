@@ -215,7 +215,7 @@
       title: 'docker compose：宣告式的艦隊',
       html: '<p><code>docker-compose.yml</code> 用<b>宣告</b>的方式描述整組服務：' +
         '每個 <code>service</code> 一個容器，image／ports／volumes／networks 全寫在檔案裡。</p>' +
-        '<p><code>depends_on</code> 控制啟動順序；volume 與 network 也在檔案裡宣告，compose 會自動建立。</p>' +
+        '<p><code>depends_on</code> 只控制<b>啟動順序</b>（先起 db 再起 web）——但它<b>不等 db 真正就緒</b>；要確保連得上，得靠 healthcheck 或應用層重試。volume 與 network 也在檔案裡宣告，compose 會自動建立。</p>' +
         '<p>之後只要 <code>docker compose up -d</code> 一鍵啟動、<code>docker compose down</code> 一鍵收隊。</p>',
       map: '<b>港口比喻</b>：compose＝艦隊調度令——你不再一艘艘喊，而是把陣型寫在紙上，號角一響全隊照令出航。'
     },
@@ -237,11 +237,13 @@
           'docker compose __ -d。',
           '完整指令：docker compose up -d'],
         check: function (result) {
-          return result && result.ok && result.parsed.cmd === 'compose-up';
+          return !!(result && result.ok && result.parsed.cmd === 'compose-up' && result.parsed.detach === true);
         },
         onDone: function (ctx) {
-          setTimeout(function () { ctx.stage.fireworks(); }, 600);
           ctx.stage.caption('全艦隊出航！network、volume、web、db——一道指令，各就各位。', 6000);
+          setTimeout(function () {
+            ctx.stage.finale('結業典禮 · 授階', '鯨魚船長授予你新軍階：艦隊指揮官');
+          }, 700);
         } }
     ]
   });

@@ -188,6 +188,8 @@
       actions.appendChild(nextBtn);
     }
     veil.classList.add('on');
+    (actions.querySelector('.btn.primary') || mapBtn).focus();
+    bindModalDismiss(veil, function () { hideModal(veil); opts.onMap(); });
     if (opts.newBadge) { setTimeout(function () { root.DG.audio.play('badge'); }, 900); }
   }
 
@@ -206,10 +208,25 @@
     actions.appendChild(yes);
     veil.appendChild(card);
     veil.classList.add('on');
+    yes.focus();
+    bindModalDismiss(veil, function () { hideModal(veil); });   // Esc／點遮罩 = 取消
   }
 
   function hideModal(veil) {
     veil.classList.remove('on');
+    if (veil._cleanupDismiss) { veil._cleanupDismiss(); veil._cleanupDismiss = null; }
+  }
+
+  // Esc 或點遮罩背景關閉 modal（並清掉監聽器，避免累積）
+  function bindModalDismiss(veil, onDismiss) {
+    function onKey(e) { if (e.key === 'Escape') { onDismiss(); } }
+    function onClick(e) { if (e.target === veil) { onDismiss(); } }
+    veil._cleanupDismiss = function () {
+      document.removeEventListener('keydown', onKey);
+      veil.removeEventListener('click', onClick);
+    };
+    document.addEventListener('keydown', onKey);
+    veil.addEventListener('click', onClick);
   }
 
   root.DG.screens = {

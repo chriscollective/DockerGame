@@ -193,13 +193,15 @@
 }
 .term-body::-webkit-scrollbar { width: 8px; }
 .term-body::-webkit-scrollbar-thumb { background: rgba(92, 242, 165, 0.18); border-radius: 4px; }
-.term-line { white-space: pre-wrap; word-break: break-all; animation: term-in 0.16s ease both; }
+.term-line { white-space: pre-wrap; overflow-wrap: anywhere; animation: term-in 0.16s ease both; }
 @keyframes term-in { from { opacity: 0; } }
 .term-line.cmd { color: #eafff3; }
 .term-line.cmd .prompt-part { color: var(--phosphor); }
 .term-line.err { color: #ff9d9d; text-shadow: 0 0 6px rgba(255, 120, 120, 0.2); }
 .term-line.dim { color: #6e8f7d; }
-.term-line.table { color: #d7f5e4; }
+.term-line.table { color: #d7f5e4; white-space: pre; overflow-x: auto; overflow-wrap: normal; }
+.term-line.table::-webkit-scrollbar { height: 6px; }
+.term-line.table::-webkit-scrollbar-thumb { background: rgba(92, 242, 165, 0.18); border-radius: 3px; }
 .term-line.ok { color: var(--phosphor); }
 .term-line.cache { color: var(--amber); }
 .term-line.build { color: #a9c4ff; }
@@ -424,6 +426,10 @@
 .df-card.dragging { opacity: 0.45; cursor: grabbing; }
 .df-card .df-inst { color: var(--cyan); font-weight: 700; }
 .df-card .df-note { font-family: var(--font-ui); font-size: 11px; color: var(--ink-faint); margin-top: 2px; }
+.df-card:focus-visible { outline: 2px solid var(--cyan); outline-offset: 2px; }
+/* metadata 指令（WORKDIR/EXPOSE/CMD…）不佔檔案系統層——視覺上與會疊層的卡片區隔 */
+.df-card.meta-card { background: linear-gradient(180deg, #2a2f45, #1c2036); border-color: rgba(150, 162, 196, 0.4); border-style: dashed; }
+.df-card.meta-card .df-inst { color: #b7c1e0; }
 .df-slot-hint { color: var(--ink-faint); font-size: 12px; text-align: center; margin: auto; }
 .df-feedback {
   position: absolute;
@@ -474,6 +480,15 @@
   background: linear-gradient(180deg, rgba(255, 190, 99, 0.28), rgba(160, 110, 40, 0.3));
   border-color: rgba(255, 190, 99, 0.55);
   color: #ffe2b8;
+}
+/* metadata 指令用扁平薄片呈現，凸顯「不佔檔案系統層」 */
+.layer-brick.meta-brick {
+  background: linear-gradient(180deg, rgba(120, 130, 165, 0.35), rgba(70, 80, 110, 0.35));
+  border-color: rgba(150, 162, 196, 0.45);
+  color: #dbe1f2;
+  box-shadow: none;
+  opacity: 0.9;
+  padding: 4px 14px;
 }
 @keyframes brick-drop {
   from { transform: translateY(-90px); opacity: 0; }
@@ -556,3 +571,9 @@
 .finale-veil h2 { font-size: 30px; letter-spacing: 0.22em; text-shadow: 0 0 30px rgba(255, 209, 102, 0.5); }
 .finale-veil .fin-sub { color: var(--ink-dim); font-size: 14px; }
 .fleet-sail { display: flex; gap: 18px; margin-top: 6px; }
+.fleet-sail .sail-ship { width: 44px; height: 44px; animation: sail-bob 2.6s ease-in-out infinite; }
+.fleet-sail .sail-ship svg { width: 100%; height: 100%; }
+@keyframes sail-bob {
+  0%, 100% { transform: translateY(0) rotate(-4deg); }
+  50% { transform: translateY(-7px) rotate(4deg); }
+}
