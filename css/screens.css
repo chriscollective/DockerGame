@@ -1,0 +1,231 @@
+/* screens.css — 標題畫面、關卡地圖、結算、徽章圖鑑 */
+
+/* ===== 標題畫面 ===== */
+#screen-title .harbor-scene { border-radius: 0; }
+.title-overlay {
+  position: absolute; inset: 0;
+  z-index: 30;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 26px;
+  background: radial-gradient(900px 480px at 50% 42%, rgba(4, 6, 15, 0.25), rgba(4, 6, 15, 0.66) 75%);
+}
+.game-logo { text-align: center; }
+.game-logo .logo-sub {
+  font-size: 13px;
+  letter-spacing: 0.5em;
+  text-indent: 0.5em;
+  color: var(--cyan);
+  margin-bottom: 14px;
+}
+.game-logo h1 {
+  font-size: clamp(52px, 6vw, 84px);
+  font-weight: 800;
+  letter-spacing: 0.12em;
+  line-height: 1.15;
+  background: linear-gradient(180deg, #ffffff 20%, #a8c8ff 60%, #6b9fe8);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  filter: drop-shadow(0 8px 30px rgba(110, 170, 255, 0.35));
+}
+.game-logo .logo-en {
+  margin-top: 10px;
+  font-family: var(--font-mono);
+  font-size: 13px;
+  letter-spacing: 0.32em;
+  color: var(--ink-dim);
+}
+.title-whale { width: 150px; animation: floaty 5s ease-in-out infinite; filter: drop-shadow(0 18px 30px rgba(0,0,0,0.5)); }
+.title-actions { display: flex; gap: 16px; align-items: center; }
+.title-progress { font-size: 12.5px; color: var(--ink-faint); letter-spacing: 0.1em; }
+
+/* ===== 關卡地圖 ===== */
+#screen-map {
+  background:
+    radial-gradient(1000px 600px at 78% -10%, rgba(60, 46, 120, 0.5), transparent 65%),
+    radial-gradient(900px 500px at 8% 112%, rgba(20, 70, 110, 0.55), transparent 60%),
+    linear-gradient(180deg, var(--sky-top), var(--sky-mid) 60%, #131a3d);
+  overflow: hidden;
+}
+.map-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 26px 44px 10px;
+}
+.map-head h2 { font-size: 24px; font-weight: 700; letter-spacing: 0.14em; }
+.map-head .head-left { display: flex; align-items: center; gap: 18px; }
+.map-stats {
+  display: flex; align-items: center; gap: 20px;
+  font-size: 13px;
+  color: var(--ink-dim);
+}
+.map-stats .xp-chip {
+  font-family: var(--font-mono);
+  padding: 5px 15px;
+  border-radius: 999px;
+  border: 1px solid var(--hairline-strong);
+  background: rgba(255, 255, 255, 0.05);
+  color: var(--gold);
+}
+.map-sea {
+  position: relative;
+  height: calc(100% - 96px);
+  margin: 6px 34px 20px;
+}
+.map-route {
+  position: absolute; inset: 0;
+  width: 100%; height: 100%;
+  pointer-events: none;
+}
+.map-route path {
+  fill: none;
+  stroke: rgba(120, 180, 255, 0.3);
+  stroke-width: 2.5;
+  stroke-dasharray: 3 11;
+  stroke-linecap: round;
+}
+.map-route path.route-lit { stroke: rgba(92, 242, 165, 0.65); filter: drop-shadow(0 0 6px rgba(92, 242, 165, 0.5)); }
+.isle {
+  position: absolute;
+  transform: translate(-50%, -50%);
+  width: 148px;
+  text-align: center;
+  transition: transform 0.55s var(--ease-spring);
+  z-index: 2;
+}
+.isle:not(.locked):hover { transform: translate(-50%, -50%) translateY(-6px) scale(1.05); }
+.isle .isle-disc {
+  position: relative;
+  width: 92px; height: 92px;
+  margin: 0 auto;
+  border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  background:
+    radial-gradient(circle at 34% 28%, rgba(255, 255, 255, 0.22), transparent 55%),
+    linear-gradient(180deg, #22335e, #131c3c);
+  border: 2px solid rgba(130, 175, 255, 0.4);
+  box-shadow: 0 18px 40px -14px rgba(0, 0, 0, 0.8), 0 0 30px -8px rgba(90, 150, 255, 0.35);
+  cursor: pointer;
+  transition: box-shadow 0.4s ease;
+}
+.isle .isle-disc svg { width: 42px; height: 42px; }
+.isle .isle-num {
+  position: absolute; top: -7px; left: -7px;
+  width: 28px; height: 28px;
+  border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  font-family: var(--font-mono);
+  font-size: 13px; font-weight: 700;
+  background: linear-gradient(180deg, #37e08e, #1cae67);
+  color: #05230f;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.5);
+}
+.isle.done .isle-disc { border-color: rgba(92, 242, 165, 0.65); }
+.isle.current .isle-disc {
+  border-color: var(--gold);
+  animation: isle-beckon 2.4s ease-in-out infinite;
+}
+@keyframes isle-beckon {
+  0%, 100% { box-shadow: 0 18px 40px -14px rgba(0, 0, 0, 0.8), 0 0 24px -4px rgba(255, 209, 102, 0.45); }
+  50% { box-shadow: 0 18px 40px -14px rgba(0, 0, 0, 0.8), 0 0 44px 2px rgba(255, 209, 102, 0.65); }
+}
+.isle.locked .isle-disc {
+  cursor: not-allowed;
+  filter: grayscale(0.9) brightness(0.55);
+  border-color: rgba(255, 255, 255, 0.12);
+}
+.isle .isle-name {
+  margin-top: 10px;
+  font-size: 13.5px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+}
+.isle .isle-topic { font-size: 11px; color: var(--ink-faint); margin-top: 1px; }
+.isle.locked .isle-name, .isle.locked .isle-topic { color: var(--ink-faint); }
+.isle .stars { margin-top: 6px; justify-content: center; display: flex; }
+.isle .lock-glyph {
+  position: absolute; right: -4px; top: -4px;
+  width: 26px; height: 26px;
+  border-radius: 50%;
+  background: #1a2140;
+  border: 1px solid var(--hairline-strong);
+  display: flex; align-items: center; justify-content: center;
+}
+.lock-glyph svg { width: 12px; height: 12px; }
+
+/* ===== 過關結算 ===== */
+.modal-veil {
+  position: fixed; inset: 0;
+  z-index: 60;
+  display: flex; align-items: center; justify-content: center;
+  background: rgba(3, 5, 12, 0.72);
+  backdrop-filter: blur(10px);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.45s ease;
+}
+.modal-veil.on { opacity: 1; pointer-events: auto; }
+.result-card { width: 480px; text-align: center; }
+.result-card .core { padding: 40px 44px 34px; }
+.result-card h3 { font-size: 26px; letter-spacing: 0.14em; margin: 12px 0 4px; }
+.result-card .result-sub { color: var(--ink-dim); font-size: 14px; }
+.result-stars { display: flex; justify-content: center; gap: 12px; margin: 24px 0 6px; }
+.result-stars .star { width: 44px; height: 44px; opacity: 0.9; }
+.result-stars .star.lit { animation: star-pop 0.6s var(--ease-pop) both; }
+.result-stars .star.lit:nth-child(2) { animation-delay: 0.22s; }
+.result-stars .star.lit:nth-child(3) { animation-delay: 0.44s; }
+@keyframes star-pop {
+  0% { transform: scale(0) rotate(-40deg); }
+  70% { transform: scale(1.25) rotate(6deg); }
+  100% { transform: scale(1); }
+}
+.result-xp {
+  font-family: var(--font-mono);
+  font-size: 15px;
+  color: var(--gold);
+  margin-bottom: 20px;
+}
+.badge-award {
+  display: flex; align-items: center; gap: 16px;
+  text-align: left;
+  margin: 6px 0 24px;
+  padding: 14px 18px;
+  border-radius: 14px;
+  background: rgba(255, 255, 255, 0.045);
+  border: 1px solid var(--hairline);
+}
+.badge-award .badge-medal { width: 58px; height: 58px; flex: none; }
+.badge-award .ba-title { font-weight: 700; font-size: 14.5px; }
+.badge-award .ba-sum { font-size: 12.5px; color: var(--ink-dim); line-height: 1.6; margin-top: 2px; }
+.result-actions { display: flex; justify-content: center; gap: 12px; }
+
+/* ===== 徽章圖鑑 ===== */
+#screen-badges {
+  background: linear-gradient(180deg, var(--sky-top), #10152f);
+  overflow-y: auto;
+}
+.badges-wrap { max-width: 1060px; margin: 0 auto; padding: 44px 40px 60px; }
+.badges-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 30px; }
+.badges-head h2 { font-size: 24px; letter-spacing: 0.14em; }
+.badge-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 18px;
+}
+.badge-cell { display: flex; gap: 18px; align-items: center; padding: 20px 22px; }
+.badge-cell .badge-medal { width: 74px; height: 74px; flex: none; }
+.badge-cell.locked { opacity: 0.4; filter: grayscale(1); }
+.badge-cell .bc-name { font-weight: 700; font-size: 15px; letter-spacing: 0.04em; }
+.badge-cell .bc-level { font-size: 11px; color: var(--ink-faint); font-family: var(--font-mono); margin-bottom: 4px; }
+.badge-cell .bc-sum { font-size: 13px; color: var(--ink-dim); line-height: 1.7; }
+
+/* ===== 重新開始確認 ===== */
+.confirm-card { width: 420px; }
+.confirm-card .core { padding: 34px 36px; text-align: center; }
+.confirm-card h3 { font-size: 19px; margin-bottom: 10px; }
+.confirm-card p { color: var(--ink-dim); font-size: 14px; margin-bottom: 26px; }
+.confirm-card .result-actions { display: flex; justify-content: center; gap: 12px; }
