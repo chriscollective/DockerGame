@@ -38,12 +38,27 @@
       '<div class="meter-bar"><div class="meter-fill"></div></div></div>' +
       '<button class="btn small primary load-btn">' + (isVM ? '造船載貨' : '裝櫃出貨') + '（0/3）</button>';
     if (!isVM) {
-      lane.querySelector('.fleet').appendChild(
-        h('div', 'ct-base', '共用船底：主機 kernel（所有貨櫃共用這一艘）'));
+      lane.querySelector('.fleet').appendChild(h('div', 'ct-base', HULL_SVG +
+        '<span class="ct-base-label">共用船底：主機 kernel（所有貨櫃共用這一艘）</span>'));
       lane.querySelector('.load-btn').disabled = true;
     }
     return lane;
   }
+
+  // 共用船底：一艘貨櫃船側影（斜艏在右、圓艉在左、水線 + 舷窗 + 船橋）
+  var HULL_SVG =
+    '<svg class="hull-svg" viewBox="0 0 340 52" xmlns="http://www.w3.org/2000/svg">' +
+    '<defs><linearGradient id="hullg" x1="0" y1="0" x2="0" y2="1">' +
+    '<stop offset="0" stop-color="#1d5a86"/><stop offset="1" stop-color="#081d30"/></linearGradient></defs>' +
+    '<rect x="20" y="2" width="30" height="12" rx="2" fill="#123a5c" stroke="rgba(89,200,255,0.55)" stroke-width="1.2"/>' + // 船橋
+    '<path d="M22 6 H30 M34 6 H42 M22 10 H30 M34 10 H42" stroke="rgba(150,220,255,0.6)" stroke-width="1.4"/>' +          // 船橋窗
+    '<path d="M6 14 H316 L332 14 L314 44 L30 44 Q10 42 6 30 Z" fill="url(#hullg)" stroke="rgba(89,200,255,0.55)" stroke-width="1.6"/>' + // 船身
+    '<path d="M9 15 H314" stroke="rgba(150,220,255,0.5)" stroke-width="1.4"/>' +   // 甲板高光
+    '<path d="M16 35 H302" stroke="rgba(120,180,240,0.32)" stroke-width="1.4"/>' + // 水線
+    '<g fill="#081d30" stroke="rgba(150,220,255,0.6)" stroke-width="0.9">' +        // 舷窗
+    '<circle cx="120" cy="26" r="2.6"/><circle cx="150" cy="26" r="2.6"/><circle cx="180" cy="26" r="2.6"/>' +
+    '<circle cx="210" cy="26" r="2.6"/><circle cx="240" cy="26" r="2.6"/><circle cx="270" cy="26" r="2.6"/></g>' +
+    '</svg>';
 
   // 小圖：一艘吃水很深的傳統大船（船身含一整套 Guest OS）
   var SHIP_SVG =
