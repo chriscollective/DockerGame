@@ -255,6 +255,16 @@ test('CLI：run -p 格式錯誤／rm 運行中／port 衝突都給 tip', () => {
   assert.match(clash.script[0].text, /port is already allocated/);
 });
 
+test('CLI：旗標放在 image 後面 → 擬真 exec 錯誤＋教學 tip，不靜默建出錯誤容器', () => {
+  const e = createEngine();
+  const cli = createCLI(e);
+  const r = cli.exec('docker run whale-app -e MODE=harbor');
+  assert.equal(r.ok, false);
+  assert.match(r.script[0].text, /executable file not found/);
+  assert.ok(r.tip && r.tip.indexOf('最後面') >= 0);
+  assert.equal(e.state.containers.length, 0);
+});
+
 test('CLI：exec -it 進 shell、shell 內 cat、exit 離開', () => {
   const e = createEngine();
   const cli = createCLI(e);

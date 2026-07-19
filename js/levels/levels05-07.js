@@ -98,7 +98,11 @@
       html: '<p><code>docker logs <名字></code>：看容器的輸出——出事先看這裡，九成線索都在。</p>' +
         '<p><code>docker exec -it <名字> sh</code>：在運行中的容器裡開一個 shell，' +
         '<code>-it</code> 讓你能互動輸入。進去之後用 <code>ls</code>、<code>cat</code> 查案，<code>exit</code> 離開。</p>' +
-        '<p><code>-e KEY=VALUE</code>：run 的時候注入環境變數；<code>--name</code> 幫容器取名，別再靠隨機名。</p>',
+        '<p><code>-e KEY=VALUE</code>：run 的時候注入環境變數；<code>--name</code> 幫容器取名，別再靠隨機名。</p>' +
+        '<p>⚠ <b>兩個超常見卡點</b>：① 環境變數<b>大小寫敏感</b>——程式讀的是 <code>MODE</code>，' +
+        '寫成 <code>mode</code> 等於沒設；② <b>image 名稱一律放在指令最後面</b>——' +
+        '所有旗標（<code>-d</code>、<code>-p</code>、<code>--name</code>、<code>-e</code>…）都要寫在 image 前面，' +
+        'image 後面的字會被當成「容器內要執行的指令」。</p>',
       map: '<b>港口比喻</b>：logs＝貨櫃的航海日誌；exec＝提燈進櫃檢查；-e＝出航前塞給船員的指令條。'
     },
     outro: '除錯三連：logs 看線索 → exec 進現場 → 修正條件（-e）重新出航。',
