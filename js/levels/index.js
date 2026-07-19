@@ -2,7 +2,8 @@
  * levels/index.js — 關卡註冊表與共用小工具
  * 每個關卡檔呼叫 DG.registerLevel(def) 自行註冊。
  * def: {id, name, topic, glyph, story[], teach{title,html,map}, outro,
- *       terminal(bool), setup(ctx), mount(ctx)?, objectives[], cleanup(ctx)?}
+ *       terminal(bool), setup(ctx), mount(ctx)?, objectives[], cleanup(ctx)?,
+ *       resultDelay(ms)?——覆寫該關過關→結算彈窗的延遲（預設走 CONFIG.RESULT_DELAY_MS）}
  * objective: {text(html), hints[3], check(result, ctx), onDone(ctx)?}
  * ctx: {engine, cli, stage, terminal, flags, flag(), overlay, game}
  */
