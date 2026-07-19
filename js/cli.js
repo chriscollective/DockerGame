@@ -147,6 +147,16 @@
       var o = parseRunFlags(args);
       if (o.err) { return errRes({ cmd: 'run' }, o.err, tipForFlagError(o.err)); }
       if (!o.image) { return errRes({ cmd: 'run' }, '"docker run" requires at least 1 argument.' + RUN_USAGE); }
+      if (o.rest.length && o.rest[0].charAt(0) === '-') {
+        // 旗標寫在 image 後面：真 Docker 會把它當「容器內要執行的指令」去 exec 而炸掉。
+        // 忠實重現這個錯誤並給提示，不讓它靜默變成設定不完整的容器（實測玩家會卡死在這裡）。
+        return errRes({ cmd: 'run', image: o.image },
+          'docker: Error response from daemon: failed to create task for container: ' +
+          'exec: "' + o.rest[0] + '": executable file not found in $PATH.',
+          '旗標放錯位置了！docker run 的格式是 <code>docker run [旗標…] image</code>——' +
+          'image 一律放在<b>最後面</b>。image 後面的字會被當成「容器裡要執行的指令」，' +
+          '所以 <code>' + o.rest[0] + '</code> 被當成程式名拿去執行了。把旗標全部移到 image 前面再試一次。');
+      }
       var res = engine.run(o);
       var parsed = { cmd: 'run', image: o.image, opts: o };
       if (!res.ok) { return runErrorRes(parsed, res); }
