@@ -6,7 +6,11 @@
   'use strict';
 
   // ---- 鯨魚船長（原創吉祥物：圓潤深藍鯨 + 船長帽） ----
+  // 每次呼叫產生唯一漸層 id，避免多隻鯨魚共用同一個 id 導致 url(#wg)
+  // 解析到隱藏畫面裡的定義而讓身體變透明。
+  var whaleSeq = 0;
   function whale(withHat) {
+    var gid = 'wg' + (++whaleSeq);
     var hat = withHat === false ? '' :
       '<g transform="translate(30,2)">' +
       '<path d="M8 14 Q20 -2 34 12 L33 16 Q20 10 9 17 Z" fill="#16213e" stroke="#3d5a99" stroke-width="1.2"/>' +
@@ -14,12 +18,12 @@
       '<circle cx="21" cy="10" r="2.6" fill="#ffd166"/>' +
       '</g>';
     return '<svg viewBox="0 0 120 84" xmlns="http://www.w3.org/2000/svg">' +
-      '<defs><linearGradient id="wg" x1="0" y1="0" x2="0" y2="1">' +
+      '<defs><linearGradient id="' + gid + '" x1="0" y1="0" x2="0" y2="1">' +
       '<stop offset="0" stop-color="#4a7fd6"/><stop offset="1" stop-color="#28497f"/></linearGradient></defs>' +
       // 尾巴
       '<path d="M95 42 Q112 30 116 18 Q114 34 106 44 Q114 52 118 64 Q108 56 94 52 Z" fill="#31589a"/>' +
       // 身體
-      '<path d="M12 50 Q14 22 52 20 Q92 18 100 44 Q102 58 84 64 Q46 74 22 62 Q12 58 12 50 Z" fill="url(#wg)"/>' +
+      '<path d="M12 50 Q14 22 52 20 Q92 18 100 44 Q102 58 84 64 Q46 74 22 62 Q12 58 12 50 Z" fill="url(#' + gid + ')"/>' +
       // 肚皮紋
       '<path d="M20 58 Q48 70 82 62 Q64 70 40 69 Q26 67 20 58 Z" fill="#bcd6f7" opacity="0.85"/>' +
       '<path d="M24 60 L80 60 M28 64 L74 65" stroke="#8fb4e8" stroke-width="1.4" opacity="0.5" fill="none"/>' +

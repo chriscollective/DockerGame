@@ -358,11 +358,12 @@
   opacity: 0.92;
 }
 @keyframes whale-cross {
-  0% { transform: translateX(0) scaleX(1); }
-  46% { transform: translateX(calc(50vw + 160px)) scaleX(1); }
-  50% { transform: translateX(calc(50vw + 160px)) scaleX(-1); }
-  96% { transform: translateX(0) scaleX(-1); }
-  100% { transform: translateX(0) scaleX(1); }
+  /* 原圖臉朝左；往右移要翻面 scaleX(-1)，往左移用 scaleX(1) */
+  0% { transform: translateX(0) scaleX(-1); }
+  46% { transform: translateX(calc(50vw + 160px)) scaleX(-1); }
+  50% { transform: translateX(calc(50vw + 160px)) scaleX(1); }
+  96% { transform: translateX(0) scaleX(1); }
+  100% { transform: translateX(0) scaleX(-1); }
 }
 .whale-swim .spout {
   position: absolute; top: -16px; left: 34%;
