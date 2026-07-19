@@ -9,6 +9,17 @@
   var LAYER_INSTS = { FROM: 1, COPY: 1, ADD: 1, RUN: 1 };
   function isLayerInst(inst) { return !!LAYER_INSTS[inst]; }
 
+  // 每一步「重新建造」時的模擬耗時（秒）——用時間對比讓 cache 的威力一眼有感
+  var BUILD_SECS = {
+    'FROM node:20': 3.2,
+    'WORKDIR /app': 0,
+    'COPY package.json .': 0.4,
+    'RUN npm install': 24.6,
+    'COPY . .': 0.6,
+    'EXPOSE 3000': 0,
+    'CMD ["node","server.js"]': 0
+  };
+
   var CARDS = [
     { inst: 'FROM', text: 'FROM node:20', note: '地基：從一張基底藍圖開始' },
     { inst: 'WORKDIR', text: 'WORKDIR /app', note: '之後的操作都在這個艙房進行' },
@@ -133,25 +144,48 @@
     });
   }
 
+  function brickBadge(s, layerStep) {
+    if (!layerStep) { return '<span class="brick-badge meta">metadata · 不佔層</span>'; }
+    if (s.cached) { return '<span class="brick-badge cached">⚡ CACHED · 0.0s</span>'; }
+    var secs = BUILD_SECS[s.step.text] || 0.5;
+    return '<span class="brick-badge fresh">建造 ' + secs.toFixed(1) + 's</span>';
+  }
+
   function animateLayers(ctx, buildResult) {
     var old = ctx.overlay.querySelector('.layer-stack');
     if (old) { old.remove(); }
     var stack = h('div', 'layer-stack');
     ctx.overlay.appendChild(stack);
+    var totalSecs = 0;
     buildResult.steps.forEach(function (s, i) {
+      if (isLayerInst(s.step.inst) && !s.cached) { totalSecs += BUILD_SECS[s.step.text] || 0.5; }
       setTimeout(function () {
         var layerStep = isLayerInst(s.step.inst);
         var brick = h('div', 'layer-brick' + (s.cached ? ' cached-brick' : '') + (layerStep ? '' : ' meta-brick'),
-          (s.cached ? 'CACHED · ' : '') + s.step.text + (layerStep ? '' : '　(metadata·不佔層)'));
+          '<span class="brick-text">' + s.step.text + '</span>' + brickBadge(s, layerStep));
         stack.appendChild(brick);
         root.DG.audio.play(s.cached ? 'click' : 'place');
       }, i * (s.cached ? 110 : 380));
     });
+    var buildMs = buildResult.steps.length * 400;
+    setTimeout(function () {
+      // 疊完後：頂部放總耗時＋圖例，第二次 build 的秒數對比就是 cache 教學的爆點
+      var cachedCount = buildResult.steps.filter(function (s) { return s.cached; }).length;
+      var total = h('div', 'layer-total',
+        '本次 build 總耗時 ≈ <b>' + totalSecs.toFixed(1) + 's</b>' +
+        (cachedCount ? '（' + cachedCount + ' 步 CACHED 秒過，只重蓋變動之後的層）' : ''));
+      stack.appendChild(total);
+      var legend = h('div', 'layer-legend',
+        '<span><i class="lg-dot fresh"></i>藍＝這次重新建造（花時間）</span>' +
+        '<span><i class="lg-dot cached"></i>黃＝CACHED：內容沒變，直接重用（0 秒）</span>' +
+        '<span><i class="lg-dot meta"></i>灰薄片＝metadata：只是設定，不佔層</span>');
+      stack.appendChild(legend);
+    }, buildMs + 250);
     setTimeout(function () {
       stack.style.transition = 'opacity 1s';
       stack.style.opacity = '0';
       setTimeout(function () { stack.remove(); }, 1100);
-    }, buildResult.steps.length * 400 + 2600);
+    }, buildMs + 12600);   // 與 resultDelay 對齊：結算蓋上來之前都保持可讀
   }
 
   function showEditButton(ctx) {
@@ -176,6 +210,7 @@
     topic: 'Dockerfile · layer · cache',
     glyph: 'blueprint',
     terminal: true,
+    resultDelay: 15000,   // layer 動畫資訊量大：疊磚 ~3s + 觀賞 12s 再跳結算（覆寫全域 8s）
     story: [
       '你已經會「用」別人的藍圖了，今天升級——<b>自己設計藍圖</b>。',
       '藍圖的設計稿叫 <code>Dockerfile</code>：一行一個指令，其中 FROM／COPY／RUN 這類會各疊出一層 layer（樓層）。',
@@ -185,6 +220,10 @@
       title: 'Dockerfile 與 layer cache',
       html: '<p>常用指令：<code>FROM</code> 基底藍圖、<code>WORKDIR</code> 工作目錄、<code>COPY</code> 搬檔案、' +
         '<code>RUN</code> 建造期執行、<code>EXPOSE</code> 標注 port、<code>CMD</code> 啟動指令。</p>' +
+        '<p>建造指令 <code>docker build -t myapp .</code> 拆開看：<code>build</code>＝照 Dockerfile 蓋出 image；' +
+        '<code>-t myapp</code>＝幫蓋好的 image 取名字（tag），之後才能 <code>docker run myapp</code>；' +
+        '最後的 <code>.</code>＝<b>build context</b>——告訴 Docker「去哪個資料夾找 Dockerfile 和要 COPY 的檔案」，' +
+        '<code>.</code> 就是「目前所在的資料夾」。</p>' +
         '<p>其中 <code>FROM</code>（基底）、<code>COPY</code>／<code>ADD</code>（搬檔）、<code>RUN</code>（執行）會各疊一層<b>唯讀 layer</b>；' +
         '<code>WORKDIR</code>／<code>EXPOSE</code>／<code>CMD</code> 只是設定（metadata），<b>不佔檔案系統層</b>。</p>' +
         '<p>重 build 時，沒變動的層直接用 <b>cache</b>（秒過）；<b>一層變了，它之後的所有層都要重蓋</b>。</p>' +

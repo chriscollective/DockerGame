@@ -207,7 +207,7 @@
       root.DG.screens.showResult(resultOpts);
     }
     var timer = setTimeout(showNow,
-      isLast ? CONFIG.RESULT_DELAY_LAST_MS : CONFIG.RESULT_DELAY_MS);
+      def.resultDelay || (isLast ? CONFIG.RESULT_DELAY_LAST_MS : CONFIG.RESULT_DELAY_MS));
     btn.addEventListener('click', showNow);
     document.getElementById('screen-level').appendChild(btn);
   }
