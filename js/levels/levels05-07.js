@@ -40,8 +40,9 @@
           '骨架：docker run -d -p ____:__ nginx（主機 8080、容器 80）。',
           '完整指令：docker run -d -p 8080:80 nginx'],
         check: function (result) {
-          return result && result.ok && result.parsed.cmd === 'run' &&
-            (result.parsed.opts.ports || []).some(function (p) { return p.host === 8080 && p.cont === 80; });
+          var o = result && result.ok && result.parsed.cmd === 'run' && result.parsed.opts;
+          return !!(o && o.detach && o.image === 'nginx' &&
+            (o.ports || []).some(function (p) { return p.host === 8080 && p.cont === 80; }));
         },
         onDone: function (ctx) {
           ctx.stage.visitorWalk(ctx.stage.crateElOf(latestNginx(ctx)));
@@ -64,8 +65,9 @@
           '骨架：docker run -d -p 8081:__ nginx。',
           '完整指令：docker run -d -p 8081:80 nginx'],
         check: function (result) {
-          return result && result.ok && result.parsed.cmd === 'run' &&
-            (result.parsed.opts.ports || []).some(function (p) { return p.host === 8081; });
+          var o = result && result.ok && result.parsed.cmd === 'run' && result.parsed.opts;
+          return !!(o && o.detach && o.image === 'nginx' &&
+            (o.ports || []).some(function (p) { return p.host === 8081 && p.cont === 80; }));
         },
         onDone: function (ctx) {
           ctx.stage.caption('兩條管線同時服務：8080 與 8081 各接一個貨櫃。');
@@ -134,19 +136,21 @@
         check: function (result) {
           return result && result.ok && result.parsed.cmd === 'shell-exit';
         } },
-      { text: '拆掉壞的，用正確配方重跑：<code>--name harbor-app</code> 加 <code>-e MODE=harbor</code>（image 是 whale-app）',
-        hints: ['先 docker rm -f harbor-app 清掉舊的，再 run 新的。',
-          '骨架：docker run -d --name harbor-app -e MODE=______ whale-app。',
-          '完整指令：docker rm -f harbor-app，然後 docker run -d --name harbor-app -e MODE=harbor whale-app'],
+      { text: '拆掉壞的，用正確配方重跑：<code>-p 3000:3000</code> + <code>--name harbor-app</code> + <code>-e MODE=harbor</code>（image 是 whale-app）',
+        hints: ['先 docker rm -f harbor-app 清掉舊的，再 run 新的——這次要 -p 發佈 port，瀏覽器才連得進來（第 5 關教過）。',
+          '骨架：docker run -d -p 3000:3000 --name harbor-app -e MODE=______ whale-app。',
+          '完整指令：docker rm -f harbor-app，然後 docker run -d -p 3000:3000 --name harbor-app -e MODE=harbor whale-app'],
         check: function (result, ctx) {
           var c = ctx.engine.findContainer('harbor-app');
-          return result && result.ok && c && c.status === 'running' && c.env.MODE;
+          return !!(result && result.ok && c && c.status === 'running' &&
+            c.imageRef.indexOf('whale-app') === 0 && c.env.MODE === 'harbor' &&
+            c.ports.some(function (p) { return p.host === 3000 && p.cont === 3000; }));
         },
         onDone: function (ctx) {
           ctx.stage.showBrowser('http://localhost:3000', '港務通知系統',
-            '<p><b>狀態：運行正常 ✓</b></p><p>MODE=harbor 已載入，通知恢復發送。碼頭外的人潮散了。</p>' +
+            '<p><b>狀態：運行正常 ✓</b></p><p>MODE=harbor 已載入、-p 3000:3000 已發佈，通知恢復發送。碼頭外的人潮散了。</p>' +
             '<p class="mb-em">— harbor-notify service</p>');
-          ctx.stage.caption('通知系統復活！這就是 logs → exec → 修復 的除錯節奏。');
+          ctx.stage.caption('通知系統復活！logs → exec → 修復（-e 設定 + -p 發佈）的除錯節奏。');
         } }
     ]
   });
@@ -165,7 +169,7 @@
     ],
     teach: {
       title: '容器是暫時的，volume 是永久的',
-      html: '<p>容器的檔案系統跟著容器走：<code>rm</code> 之後<b>資料全部消失</b>。這是特性不是 bug——容器要能隨拆隨建。</p>' +
+      html: '<p>容器的可寫層跟著容器走：<code>rm</code> 之後<b>寫在容器裡的資料就沒了</b>（但掛在 volume／bind mount 的不會——那正是這關要學的）。這是特性不是 bug——容器要能隨拆隨建。</p>' +
         '<p><b>volume</b> 是 Docker 管理的獨立儲存空間：<code>docker volume create <名字></code> 建立，' +
         'run 時用 <code>-v 名字:/容器內路徑</code> 掛進去。</p>' +
         '<p>容器拆了，volume 還在；新容器掛上同一個 volume，資料原封不動。</p>' +
@@ -229,8 +233,9 @@
           '完整指令：docker rm -f db，然後 docker run -d --name db -v treasure:/data harbor-db'],
         check: function (result, ctx) {
           var c = ctx.engine.findContainer('db');
-          return result && result.ok && c && c.status === 'running' &&
-            c.mounts.some(function (m) { return m.volume === 'treasure'; });
+          return !!(result && result.ok && c && c.status === 'running' &&
+            c.imageRef.indexOf('harbor-db') === 0 &&
+            c.mounts.some(function (m) { return m.volume === 'treasure' && m.dest === '/data'; }));
         } },
       { text: '再存一次黃金（store gold），這次它會進保險庫',
         hints: ['跟剛才一樣的 exec store。',

@@ -68,11 +68,16 @@
     }
 
     // ---------- 貨櫃 ----------
+    function statusTag(c) {
+      return c.status === 'running' ? '▶ RUN' : '⏸ STOP';
+    }
+
     function crateHTML(c) {
       var ports = c.ports.map(function (p) {
         return '<div class="pipe"></div><div class="pipe-tag">:' + p.host + ' → :' + p.cont + '</div>';
       }).join('');
       return '<div class="crate-doors"></div><div class="crate-lamp"></div>' + ports +
+        '<div class="crate-status">' + statusTag(c) + '</div>' +
         '<div class="crate-label">' + c.name + '</div>';
     }
 
@@ -91,6 +96,8 @@
       if (!d) { return; }
       d.classList.toggle('exited', c.status !== 'running');
       d.classList.toggle('netted', !!(c.network && c.network !== 'bridge'));
+      var stEl = d.querySelector('.crate-status');
+      if (stEl) { stEl.textContent = statusTag(c); }
     }
 
     function removeCrate(c, animated) {
@@ -161,6 +168,28 @@
       [[25, 30], [55, 22], [78, 36], [42, 44], [65, 50]].forEach(function (pos, i) {
         setTimeout(function () { burst(pos[0], pos[1], 26); }, i * 260);
       });
+    }
+
+    // 結業典禮：艦隊出航儀式（接上 level.css 既有的 .finale-veil / .fleet-sail）
+    function finale(title, sub) {
+      var veil = el('div', 'finale-veil');
+      var ships = '';
+      for (var i = 0; i < 5; i++) {
+        ships += '<div class="sail-ship" style="animation-delay:' + (i * 0.16) + 's">' + art.whale(true) + '</div>';
+      }
+      veil.innerHTML = '<h2>' + (title || '結業典禮') + '</h2>' +
+        '<div class="fin-sub">' + (sub || '') + '</div>' +
+        '<div class="fleet-sail">' + ships + '</div>';
+      mount.appendChild(veil);
+      requestAnimationFrame(function () {
+        requestAnimationFrame(function () { veil.classList.add('on'); });
+      });
+      fireworks();
+      setTimeout(function () {
+        veil.classList.remove('on');
+        setTimeout(function () { if (veil.parentNode) { veil.remove(); } }, 900);
+      }, 6500);
+      return veil;
     }
 
     // ---------- 說明字幕 ----------
@@ -275,6 +304,7 @@
       caption: caption,
       burst: burst,
       fireworks: fireworks,
+      finale: finale,
       visitorWalk: visitorWalk,
       crateElOf: function (name) {
         var c = engine.findContainer(name);

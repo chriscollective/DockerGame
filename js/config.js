@@ -84,7 +84,7 @@
       layerSizes: ['29.2MB', '48.3MB', '64.5MB'],
       desc: '港務通知系統（會讀 MODE 環境變數）', command: 'node server.js',
       files: {
-        'config.txt': 'app=harbor-notify\nMODE=<未設定>\n# 提示：本程式啟動時需要環境變數 MODE=harbor',
+        'config.txt': 'app=harbor-notify\n# MODE 由「環境變數」提供（docker run -e MODE=...），不是寫死在這個檔\n# 目前容器未設定 MODE → 服務停擺；正解：-e MODE=harbor',
         'server.js': "require('./notify')(process.env.MODE)"
       }
     },
@@ -113,9 +113,9 @@
     { id: 'b7',  level: 7,  title: '保險庫之證', glyph: 'vault', hue: 130,
       summary: '容器是暫時的，刪了資料就沒；volume 掛載讓資料活得比容器久。' },
     { id: 'b8',  level: 8,  title: '設計師之證', glyph: 'blueprint', hue: 215,
-      summary: 'Dockerfile 每行指令是一層 layer；順序影響 cache——少變的放前面。' },
+      summary: 'RUN/COPY/ADD 會疊出唯讀 layer、FROM 是基底層；WORKDIR/EXPOSE/CMD 等是 metadata 不佔層。順序影響 cache——少變的放前面。' },
     { id: 'b9',  level: 9,  title: '航道之證', glyph: 'compass', hue: 175,
-      summary: '自訂 network 讓容器用「容器名」互相解析（內建 DNS）；預設 bridge 不行。' },
+      summary: '自訂 network 讓容器用「容器名」互相解析（內建 DNS）；預設 bridge 沒有容器名 DNS（仍可用 IP 互通）。' },
     { id: 'b10', level: 10, title: '指揮官之證', glyph: 'flag', hue: 350,
       summary: 'docker compose 用一份 YAML 宣告整支艦隊：services、ports、volumes、networks。' }
   ];
@@ -123,9 +123,9 @@
   // ---- help 指令表：隨進度解鎖（level = 學會它的關卡）----
   var COMMAND_DEX = [
     { level: 2,  cmd: 'docker run <image>',            zh: '從藍圖建立並啟動貨櫃' },
+    { level: 2,  cmd: 'docker ps [-a]',                zh: '列出運行中（-a 含停止）貨櫃' },
     { level: 3,  cmd: 'docker pull <image>[:tag]',     zh: '從藍圖倉庫下載藍圖' },
     { level: 3,  cmd: 'docker images',                 zh: '列出本地藍圖' },
-    { level: 4,  cmd: 'docker ps [-a]',                zh: '列出運行中（-a 含停止）貨櫃' },
     { level: 4,  cmd: 'docker stop <名字|id>',          zh: '停止貨櫃' },
     { level: 4,  cmd: 'docker start <名字|id>',         zh: '啟動已停止的貨櫃' },
     { level: 4,  cmd: 'docker rm [-f] <名字|id>',       zh: '移除貨櫃（-f 強制）' },

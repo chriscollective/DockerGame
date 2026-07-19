@@ -268,4 +268,73 @@ test('CLI：exec -it 進 shell、shell 內 cat、exit 離開', () => {
   assert.equal(cli.inShell(), false);
 });
 
+// ---------- 教學正確性修正（review 後新增）----------
+test('A5 webapp 啟動日誌用 tcp 描述 db:5432，不再標成 http://', () => {
+  const e = createEngine();
+  const { container: c } = e.run({ image: 'webapp', name: 'web', detach: true });
+  const log = c.logs.join('\n');
+  assert.match(log, /db:5432/);
+  assert.doesNotMatch(log, /http:\/\/db:5432/, 'db:5432 是 TCP，不該標成 http');
+});
+
+test('A3 run 服務不加 -d：終端機提示前景 attach、需 -d 才背景；加 -d 就不提示', () => {
+  const cli = createCLI(createEngine());
+  const fg = cli.exec('docker run nginx');
+  const fgText = fg.script.map(function (l) { return l.text; }).join('\n');
+  assert.match(fgText, /前景|-d/, '前景服務應提示需要 -d');
+  const bg = cli.exec('docker run -d nginx');
+  const bgText = bg.script.map(function (l) { return l.text; }).join('\n');
+  assert.doesNotMatch(bgText, /前景/, '加了 -d 不該再提示前景');
+});
+
+test('A6 compose up 不加 -d：不啟動艦隊並提示 -d；up -d 才真正啟動', () => {
+  const e = createEngine();
+  const cli = createCLI(e);
+  cli.setComposeProject({
+    name: 'harbor', networks: ['fleet-net'], volumes: ['db-data'],
+    services: [
+      { name: 'web', image: 'webapp', ports: [{ host: 8080, cont: 3000 }], network: 'fleet-net', dependsOn: ['db'] },
+      { name: 'db', image: 'harbor-db', volume: { name: 'db-data', dest: '/data' }, network: 'fleet-net' }
+    ]
+  });
+  const noD = cli.exec('docker compose up');
+  assert.equal(noD.parsed.detach, false);
+  assert.equal(e.state.containers.length, 0, '沒 -d 不應建立容器');
+  const withD = cli.exec('docker compose up -d');
+  assert.equal(withD.parsed.detach, true);
+  assert.equal(e.state.containers.length, 2, 'up -d 應啟動 web + db');
+});
+
+test('C3 CLI 串接：a && b 兩個都跑、事件合併；&& 遇錯短路；; 不短路', () => {
+  const e = createEngine();
+  const cli = createCLI(e);
+  const chain = cli.exec('docker run -d --name a nginx && docker run -d --name b nginx');
+  assert.equal(chain.ok, true);
+  assert.ok(e.findContainer('a') && e.findContainer('b'), '兩個容器都該建立');
+
+  const e2 = createEngine();
+  const cli2 = createCLI(e2);
+  const sc = cli2.exec('docker rm ghost && docker run -d --name z nginx');
+  assert.equal(sc.ok, false, '第一個失敗整串應失敗');
+  assert.equal(e2.findContainer('z'), null, '&& 短路：第二個不該執行');
+
+  const e3 = createEngine();
+  const cli3 = createCLI(e3);
+  cli3.exec('docker rm ghost ; docker run -d --name y nginx');
+  assert.ok(e3.findContainer('y'), '; 不短路：第二個仍應執行');
+});
+
+test('F1 network create 印出的 ID 與 ls 短 ID 一致（前 12 碼）', () => {
+  const e = createEngine();
+  const cli = createCLI(e);
+  const cr = cli.exec('docker network create harbor-net');
+  const printedId = cr.script[0].text.trim();
+  const net = e.findNetwork('harbor-net');
+  assert.ok(net.id, 'network 應有 id');
+  assert.equal(printedId.slice(0, 12), net.id.slice(0, 12), 'create 印出 ID 前 12 碼應等於短 ID');
+  const ls = cli.exec('docker network ls');
+  const row = ls.script.map(function (l) { return l.text; }).filter(function (t) { return t.indexOf('harbor-net') >= 0; })[0];
+  assert.ok(row && row.indexOf(net.id.slice(0, 12)) >= 0, 'ls 應顯示短 ID');
+});
+
 console.log('\n全部通過：' + passed + ' 個測試');
