@@ -306,15 +306,16 @@
 .lane.active-lane { border-color: rgba(89, 200, 255, 0.5); box-shadow: 0 0 30px -10px rgba(89, 200, 255, 0.4); }
 .lane h4 { font-size: 14px; letter-spacing: 0.1em; display: flex; justify-content: space-between; align-items: center; }
 .lane .lane-tag { font-size: 10.5px; font-family: var(--font-mono); color: var(--ink-faint); }
-.lane .fleet { flex: 1; display: flex; flex-wrap: wrap; gap: 10px; align-content: flex-start; padding: 14px 2px; min-height: 120px; }
+.lane .fleet { flex: 1; min-height: 0; display: flex; flex-wrap: wrap; gap: 10px; align-content: flex-start; padding: 14px 2px; overflow-y: auto; }
 .vm-ship {
-  width: 118px; padding: 8px 10px 10px;
+  width: 118px; padding: 6px 10px 10px;
   border-radius: 10px;
   background: linear-gradient(180deg, #3c3358, #262040);
   border: 1px solid rgba(180, 150, 255, 0.35);
   font-size: 10.5px;
   animation: rise-in 0.6s var(--ease-spring) both;
 }
+.vm-ship .ship-ico { display: block; width: 100%; height: auto; margin-bottom: 4px; }
 .vm-ship .vs-row { display: flex; justify-content: space-between; color: var(--ink-dim); }
 .vm-ship .vs-cargo {
   margin-top: 6px; padding: 3px 8px;
@@ -325,24 +326,58 @@
   font-size: 11px;
 }
 .vm-ship .vs-os { color: var(--rose); }
-.ct-base {
-  width: 100%; padding: 8px 12px;
-  border-radius: 10px;
-  background: linear-gradient(180deg, #123a5c, #0c2a44);
-  border: 1px solid rgba(89, 200, 255, 0.4);
-  font-size: 11px;
-  color: var(--cyan);
-  text-align: center;
+/* 貨櫃車道：共用船底（船形）沉在最下方，短貨櫃置中由下往上堆在甲板上 */
+.ct-lane .fleet {
+  flex-direction: column-reverse;
+  flex-wrap: nowrap;
+  justify-content: flex-start;
+  align-items: center;
+  gap: 4px;
 }
+.ct-base {
+  width: 100%;
+  position: relative;
+  margin-top: 4px;
+  padding: 0;
+  background: none;
+  border: none;
+}
+.ct-base .hull-svg {
+  display: block; width: 100%; height: auto;
+  filter: drop-shadow(0 5px 9px rgba(0, 0, 0, 0.5));
+}
+.ct-base .ct-base-label {
+  position: absolute; left: 0; right: 0; top: 46%;
+  transform: translateY(-50%);
+  text-align: center;
+  font-size: 10px; letter-spacing: 0.02em;
+  color: var(--cyan);
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.6);
+  pointer-events: none;
+}
+/* 貨櫃：波浪鋼板 + 櫃門把手，短箱體置中堆疊在共用船底上 */
 .ct-crate {
-  padding: 6px 12px;
-  border-radius: 8px;
-  font-size: 11.5px;
-  color: #fff;
-  background: linear-gradient(180deg, hsl(var(--h), 60%, 48%), hsl(var(--h), 62%, 36%));
-  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.3);
+  width: 150px; height: 30px;
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 0 10px 0 16px;
+  border-radius: 4px;
+  color: #fff; font-size: 11px;
+  border: 1px solid hsl(var(--h), 55%, 28%);
+  background:
+    repeating-linear-gradient(90deg, rgba(0,0,0,0.16) 0 1.5px, transparent 1.5px 9px),
+    linear-gradient(180deg, hsl(var(--h), 62%, 52%), hsl(var(--h), 64%, 38%));
+  box-shadow: inset 0 1px 0 rgba(255,255,255,0.28), 0 2px 6px -3px rgba(0,0,0,0.5);
+  position: relative;
   animation: rise-in 0.45s var(--ease-pop) both;
 }
+.ct-crate::before {   /* 左側櫃門把手 */
+  content: ''; position: absolute; left: 6px; top: 6px; bottom: 6px; width: 3px;
+  border-radius: 2px;
+  background: rgba(255,255,255,0.55);
+  box-shadow: 4px 0 0 -1px rgba(0,0,0,0.25);
+}
+.ct-crate .ct-name { font-weight: 600; text-shadow: 0 1px 1px rgba(0,0,0,0.35); }
+.ct-crate .ct-mark { font-family: var(--font-mono); font-size: 9.5px; opacity: 0.8; letter-spacing: 0.06em; }
 .lane .lane-meter { font-family: var(--font-mono); font-size: 11px; color: var(--ink-dim); }
 .lane .meter-bar {
   height: 7px; border-radius: 4px;

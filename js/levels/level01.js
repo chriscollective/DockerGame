@@ -29,7 +29,7 @@
 
   function buildLane(kind) {
     var isVM = kind === 'vm';
-    var lane = h('div', 'lane' + (isVM ? ' active-lane' : ''));
+    var lane = h('div', 'lane' + (isVM ? ' active-lane' : ' ct-lane'));
     lane.innerHTML =
       '<h4>' + (isVM ? '傳統大船（虛擬機 VM）' : '貨櫃船（Container）') +
       '<span class="lane-tag">' + (isVM ? '每件貨 = 造一艘船' : '共用船底 = 共用 kernel') + '</span></h4>' +
@@ -38,18 +38,45 @@
       '<div class="meter-bar"><div class="meter-fill"></div></div></div>' +
       '<button class="btn small primary load-btn">' + (isVM ? '造船載貨' : '裝櫃出貨') + '（0/3）</button>';
     if (!isVM) {
-      lane.querySelector('.fleet').appendChild(
-        h('div', 'ct-base', '共用船底：主機 kernel（所有貨櫃共用這一艘）'));
+      lane.querySelector('.fleet').appendChild(h('div', 'ct-base', HULL_SVG +
+        '<span class="ct-base-label">共用船底：主機 kernel（所有貨櫃共用這一艘）</span>'));
       lane.querySelector('.load-btn').disabled = true;
     }
     return lane;
   }
+
+  // 共用船底：一艘貨櫃船側影（斜艏在右、圓艉在左、水線 + 舷窗 + 船橋）
+  var HULL_SVG =
+    '<svg class="hull-svg" viewBox="0 0 340 52" xmlns="http://www.w3.org/2000/svg">' +
+    '<defs><linearGradient id="hullg" x1="0" y1="0" x2="0" y2="1">' +
+    '<stop offset="0" stop-color="#1d5a86"/><stop offset="1" stop-color="#081d30"/></linearGradient></defs>' +
+    '<rect x="20" y="2" width="30" height="12" rx="2" fill="#123a5c" stroke="rgba(89,200,255,0.55)" stroke-width="1.2"/>' + // 船橋
+    '<path d="M22 6 H30 M34 6 H42 M22 10 H30 M34 10 H42" stroke="rgba(150,220,255,0.6)" stroke-width="1.4"/>' +          // 船橋窗
+    '<path d="M6 14 H316 L332 14 L314 44 L30 44 Q10 42 6 30 Z" fill="url(#hullg)" stroke="rgba(89,200,255,0.55)" stroke-width="1.6"/>' + // 船身
+    '<path d="M9 15 H314" stroke="rgba(150,220,255,0.5)" stroke-width="1.4"/>' +   // 甲板高光
+    '<path d="M16 35 H302" stroke="rgba(120,180,240,0.32)" stroke-width="1.4"/>' + // 水線
+    '<g fill="#081d30" stroke="rgba(150,220,255,0.6)" stroke-width="0.9">' +        // 舷窗
+    '<circle cx="120" cy="26" r="2.6"/><circle cx="150" cy="26" r="2.6"/><circle cx="180" cy="26" r="2.6"/>' +
+    '<circle cx="210" cy="26" r="2.6"/><circle cx="240" cy="26" r="2.6"/><circle cx="270" cy="26" r="2.6"/></g>' +
+    '</svg>';
+
+  // 小圖：一艘吃水很深的傳統大船（船身含一整套 Guest OS）
+  var SHIP_SVG =
+    '<svg class="ship-ico" viewBox="0 0 96 44" xmlns="http://www.w3.org/2000/svg">' +
+    '<path d="M6 26 H90 L80 40 H16 Z" fill="#6b5cae"/>' +            // 船身
+    '<path d="M6 26 H90 L88 30 H8 Z" fill="#8a79d6"/>' +             // 甲板亮面
+    '<rect x="40" y="12" width="30" height="14" rx="2" fill="#9a8ae0"/>' + // 駕駛艙
+    '<rect x="46" y="4" width="8" height="9" rx="1.5" fill="#5a4c94"/>' +  // 煙囪
+    '<rect x="12" y="18" width="22" height="8" rx="1.5" fill="#4f4285"/>' +// 貨艙
+    '<path d="M4 40 Q14 44 24 40 T44 40 T64 40 T84 40 T96 40" fill="none" stroke="#3a6ea8" stroke-width="2" opacity="0.6"/>' +
+    '</svg>';
 
   function loadVM(lane, idx, done) {
     var btn = lane.querySelector('.load-btn');
     btn.disabled = true;
     btn.textContent = '正在建造整艘船（載入 Guest OS）…';
     var ship = h('div', 'vm-ship',
+      SHIP_SVG +
       '<div class="vs-row"><span>大船 #' + (idx + 1) + '</span><span>2.4GB</span></div>' +
       '<div class="vs-os">Guest OS 開機中…</div>' +
       '<div class="vs-cargo">' + CARGO[idx] + '</div>');
@@ -65,7 +92,9 @@
   }
 
   function loadCT(lane, idx, done) {
-    var crate = h('div', 'ct-crate', CARGO[idx]);
+    var crate = h('div', 'ct-crate',
+      '<span class="ct-name">' + CARGO[idx] + '</span>' +
+      '<span class="ct-mark">CTR-' + (idx + 1) + '</span>');
     crate.style.setProperty('--h', [205, 155, 25][idx]);
     lane.querySelector('.fleet').appendChild(crate);
     root.DG.audio.play('place');
