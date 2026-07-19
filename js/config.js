@@ -34,6 +34,11 @@
   // 同一目標連錯 N 次自動遞出提示
   var WRONG_TRIES_BEFORE_HINT = 2;
 
+  // 過關 → 結算彈窗的延遲：留時間讀完最後一個指令的輸出與船長收尾金句
+  // （等待期間畫面會出現「查看結算」鈕，等不及可直接按）
+  var RESULT_DELAY_MS = 5000;
+  var RESULT_DELAY_LAST_MS = 6500;   // 最終關的艦隊啟航演出較長
+
   // ---- 終端機 ----
   var TERMINAL = {
     lineDelay: 34,        // 逐行輸出間隔 ms
@@ -149,6 +154,8 @@
     RANKS: RANKS,
     starsForHints: starsForHints,
     WRONG_TRIES_BEFORE_HINT: WRONG_TRIES_BEFORE_HINT,
+    RESULT_DELAY_MS: RESULT_DELAY_MS,
+    RESULT_DELAY_LAST_MS: RESULT_DELAY_LAST_MS,
     TERMINAL: TERMINAL,
     NAME_ADJ: NAME_ADJ,
     NAME_SUR: NAME_SUR,
