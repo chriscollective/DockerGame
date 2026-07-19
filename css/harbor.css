@@ -1,4 +1,4 @@
-/* harbor.css — 港口舞台場景：天空、海浪、碼頭、起重機、貨櫃、藍圖架、保險庫、航道 */
+/* harbor.css — 港口舞台場景：天空、海浪、碼頭、起重機、貨櫃、藍圖架、保險庫、內線 */
 
 /* ===== 場景外框 ===== */
 .harbor-scene {
@@ -280,7 +280,7 @@
   white-space: nowrap;
 }
 
-/* 航道光環（自訂 network 的容器共享同色光暈） */
+/* 內線光環（自訂 network 的容器共享同色光暈） */
 .crate.netted::after {
   content: '';
   position: absolute; inset: -7px;

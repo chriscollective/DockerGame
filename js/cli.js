@@ -186,7 +186,7 @@
       } else if (res.conflict && res.error.indexOf('Conflict. The container name') >= 0) {
         tip = '這個名字已經有貨櫃在用了。名字是唯一的——先 docker rm 舊的，或換個 --name。';
       } else if (res.conflict && res.error.indexOf('network') >= 0) {
-        tip = '這條航道還沒開闢。先 docker network create 建立它。';
+        tip = '這條內線還沒拉。先 docker network create 建立它。';
       } else if (res.imageMissing) {
         tip = '藍圖倉庫裡沒有這個名字的藍圖。檢查拼字，或用 help 看看本港認得哪些藍圖。';
       }
@@ -322,8 +322,8 @@
     function execTip(res) {
       if (res.notRunning) { return 'exec 需要貨櫃在運行中。先 docker start 它，或 docker ps -a 確認狀態。'; }
       if (res.pingFail) {
-        return 'ping 不到！這兩個貨櫃不在同一條自訂航道上——預設 bridge 沒有名字解析（DNS），' +
-          '所以叫不到對方的名字。開一條自訂 network 讓它們加入吧。';
+        return 'ping 不到！這兩個貨櫃不在同一條自訂內線上——預設 bridge 的總機沒有通訊錄（DNS），' +
+          '撥名字沒人幫你轉接。拉一條自訂 network 把它們都接上吧。';
       }
       return null;
     }
@@ -371,7 +371,7 @@
     function cmdNetwork(args) {
       if (args[0] === 'create' && args[1]) {
         var res = engine.networkCreate(args[1]);
-        if (!res.ok) { return errRes({ cmd: 'network-create', name: args[1] }, res.error, '這條航道已經存在了，直接用它就行。'); }
+        if (!res.ok) { return errRes({ cmd: 'network-create', name: args[1] }, res.error, '這條內線已經存在了，直接用它就行。'); }
         // 印出剛建立的 network 完整 ID（ls 會顯示它的前 12 碼，兩者一致）
         return okRes({ cmd: 'network-create', name: args[1] }, lines([res.network.id], 'out'), { network: res.network });
       }
@@ -420,7 +420,7 @@
       if (!st.composeProject) {
         return errRes({ cmd: 'compose' },
           'no configuration file provided: not found',
-          '還沒有艦隊調度令（docker-compose.yml）——先在調度台把它組出來。');
+          '還沒有總調度令（docker-compose.yml）——先在調度台把它組出來。');
       }
       if (!isUp) {
         return errRes({ cmd: 'compose' }, 'unknown docker command: "compose ' + (args[0] || '') + '"',
@@ -430,7 +430,7 @@
         // 真實 compose up 不加 -d 會 attach 全部服務日誌並卡住終端機——教學上要求用 -d
         return okRes({ cmd: 'compose-up', detach: false }, lines([
           '沒加 -d：docker compose up 會 attach 到所有服務、把日誌灌進終端機並卡住（要 Ctrl-C 才停）。',
-          '要讓整支艦隊在背景長駐，改用：docker compose up -d'
+          '要讓整組服務在背景長駐，改用：docker compose up -d'
         ], 'dim'));
       }
       var res = engine.composeUp(st.composeProject);

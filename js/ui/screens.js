@@ -162,7 +162,7 @@
     card.innerHTML = '<div class="core">' +
       '<span class="eyebrow">' + (opts.isLast ? '結業之戰 · 通過' : 'LEVEL ' + opts.levelId + ' · 通過') + '</span>' +
       '<h3>' + lv.name + '</h3>' +
-      '<div class="result-sub">' + (opts.isLast ? '鯨魚船長授階：艦隊指揮官' : lv.topic) + '</div>' +
+      '<div class="result-sub">' + (opts.isLast ? '鯨魚船長授銜：鯨魚港港務長（Harbour Master）' : lv.topic) + '</div>' +
       '<div class="result-stars">' + starsHTML + '</div>' +
       '<div class="result-xp">' + (opts.xpGained > 0 ? '+' + opts.xpGained + ' XP' : '（重玩 · 無新增 XP）') +
       ' · 總計 ' + root.DG.store.data.xp + ' XP · ' + root.DG.store.rank().title + '</div>' +

@@ -21,7 +21,7 @@
     { xp: 300,  title: '貨櫃學徒' },
     { xp: 700,  title: '碼頭操作員' },
     { xp: 1200, title: '航線領航員' },
-    { xp: 1800, title: '艦隊指揮官' }
+    { xp: 1800, title: '港務長' }
   ];
 
   // 提示 → 星等：0 hint = 3 星、1-2 = 2 星、3+ = 1 星
@@ -37,7 +37,7 @@
   // 過關 → 結算彈窗的延遲：留時間讀完最後一個指令的輸出與船長收尾金句
   // （等待期間畫面會出現「查看結算」鈕，等不及可直接按）
   var RESULT_DELAY_MS = 8000;
-  var RESULT_DELAY_LAST_MS = 9500;   // 最終關的艦隊啟航演出較長
+  var RESULT_DELAY_LAST_MS = 9500;   // 最終關的結業授階演出較長
 
   // ---- 終端機 ----
   var TERMINAL = {
@@ -119,10 +119,10 @@
       summary: '容器是暫時的，刪了資料就沒；volume 掛載讓資料活得比容器久。' },
     { id: 'b8',  level: 8,  title: '設計師之證', glyph: 'blueprint', hue: 215,
       summary: 'RUN/COPY/ADD 會疊出唯讀 layer、FROM 是基底層；WORKDIR/EXPOSE/CMD 等是 metadata 不佔層。順序影響 cache——少變的放前面。' },
-    { id: 'b9',  level: 9,  title: '航道之證', glyph: 'compass', hue: 175,
+    { id: 'b9',  level: 9,  title: '內線之證', glyph: 'compass', hue: 175,
       summary: '自訂 network 讓容器用「容器名」互相解析（內建 DNS）；預設 bridge 沒有容器名 DNS（仍可用 IP 互通）。' },
-    { id: 'b10', level: 10, title: '指揮官之證', glyph: 'flag', hue: 350,
-      summary: 'docker compose 用一份 YAML 宣告整支艦隊：services、ports、volumes、networks。' }
+    { id: 'b10', level: 10, title: '港務長之證', glyph: 'flag', hue: 350,
+      summary: 'docker compose 用一份 YAML 宣告整組服務：services、ports、volumes、networks。' }
   ];
 
   // ---- help 指令表：隨進度解鎖（level = 學會它的關卡）----
@@ -141,9 +141,9 @@
     { level: 7,  cmd: 'docker volume create <名字>',    zh: '建立保險庫（volume）' },
     { level: 7,  cmd: 'docker run -v 保險庫:/路徑 …',    zh: '把保險庫掛進貨櫃' },
     { level: 8,  cmd: 'docker build -t <名字> .',       zh: '依 Dockerfile 建造藍圖' },
-    { level: 9,  cmd: 'docker network create <名字>',   zh: '開闢自訂航道（network）' },
-    { level: 9,  cmd: 'docker run --network <航道> …',  zh: '讓貨櫃加入航道' },
-    { level: 10, cmd: 'docker compose up -d',          zh: '照艦隊調度令啟動整組服務' }
+    { level: 9,  cmd: 'docker network create <名字>',   zh: '拉一條專屬內線（network）' },
+    { level: 9,  cmd: 'docker run --network <內線> …',  zh: '把貨櫃接上內線' },
+    { level: 10, cmd: 'docker compose up -d',          zh: '照總調度令啟動整組服務' }
   ];
 
   return {

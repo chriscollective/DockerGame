@@ -1,5 +1,5 @@
 /*
- * stage.js — 港口舞台：把引擎狀態畫成貨櫃/藍圖架/保險庫/航道，並播放事件動畫。
+ * stage.js — 港口舞台：把引擎狀態畫成貨櫃/藍圖架/保險庫/內線，並播放事件動畫。
  * 用法：sync() 全量重繪（無動畫）；applyEvents(events) 在指令跑完後播放對應演出。
  */
 (function (root) {
@@ -170,7 +170,7 @@
       });
     }
 
-    // 結業典禮：艦隊出航儀式（接上 level.css 既有的 .finale-veil / .fleet-sail）
+    // 結業典禮：授階儀式（接上 level.css 既有的 .finale-veil / .fleet-sail）
     function finale(title, sub) {
       var veil = el('div', 'finale-veil');
       var ships = '';
@@ -257,7 +257,7 @@
       'container:die': function (d) { updateCrate(d.container); },
       'container:remove': function (d) { removeCrate(d.container, true); },
       'volume:create': function (d) { renderVaults(d.volume.name); root.DG.audio.play('splash'); },
-      'network:create': function (d) { caption('新航道開通：' + d.network.name); },
+      'network:create': function (d) { caption('內線開通：' + d.network.name); },
       'ping': function (d) { pingBeam(d.from, d.to, d.ok); },
       'cargo:store': function (d) {
         caption(d.persistent ? ('貨物「' + d.item + '」已存入保險庫 ' + d.volume)
