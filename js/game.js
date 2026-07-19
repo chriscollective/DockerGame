@@ -178,20 +178,38 @@
     var stars = CONFIG.starsForHints(current.hintsUsed);
     var res = root.DG.store.completeLevel(def.id, stars);
     var isLast = def.id === CONFIG.LEVEL_COUNT;
-    setTimeout(function () {
-      root.DG.screens.showResult({
-        levelId: def.id,
-        stars: stars,
-        xpGained: res.xpGained,
-        badge: res.badge,
-        newBadge: res.newBadge,
-        isLast: isLast,
-        onMap: goMap,
-        onBadges: goBadges,
-        onNext: (!isLast && root.DG.getLevel(def.id + 1))
-          ? function () { startLevel(def.id + 1); } : null
-      });
-    }, isLast ? 3400 : 1600);
+    var resultOpts = {
+      levelId: def.id,
+      stars: stars,
+      xpGained: res.xpGained,
+      badge: res.badge,
+      newBadge: res.newBadge,
+      isLast: isLast,
+      onMap: goMap,
+      onBadges: goBadges,
+      onNext: (!isLast && root.DG.getLevel(def.id + 1))
+        ? function () { startLevel(def.id + 1); } : null
+    };
+    // 不馬上跳結算：留時間讀完最後一個指令的輸出與船長收尾，
+    // 玩家也可以按「查看結算」直接看，不必等滿
+    var token = current;
+    var btn = h('button', 'btn primary result-now-btn',
+      '查看結算<span class="btn-orb">➜</span>');
+    var shown = false;
+    function showNow() {
+      if (shown) { return; }
+      shown = true;
+      clearTimeout(timer);
+      btn.remove();
+      // 玩家已離開這一關（回航線圖／換關）就不再彈結算——進度早已存檔
+      if (current !== token ||
+          !document.getElementById('screen-level').classList.contains('on')) { return; }
+      root.DG.screens.showResult(resultOpts);
+    }
+    var timer = setTimeout(showNow,
+      isLast ? CONFIG.RESULT_DELAY_LAST_MS : CONFIG.RESULT_DELAY_MS);
+    btn.addEventListener('click', showNow);
+    document.getElementById('screen-level').appendChild(btn);
   }
 
   // ---------- 啟動關卡 ----------
@@ -235,6 +253,8 @@
     };
 
     switchScreen('screen-level', function () {
+      var stale = document.querySelector('.result-now-btn');
+      if (stale) { stale.remove(); }
       document.getElementById('lt-num').textContent = 'LEVEL ' + def.id + ' / ' + CONFIG.LEVEL_COUNT;
       document.getElementById('lt-title').textContent = def.name + '　·　' + def.topic;
       updateHintBadge();
