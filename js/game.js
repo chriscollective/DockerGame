@@ -257,6 +257,8 @@
       if (stale) { stale.remove(); }
       document.getElementById('lt-num').textContent = 'LEVEL ' + def.id + ' / ' + CONFIG.LEVEL_COUNT;
       document.getElementById('lt-title').textContent = def.name + '　·　' + def.topic;
+      // 無終端機的關卡：把終端機列收成薄鎖定條，多出的高度全給中間舞台
+      document.getElementById('screen-level').classList.toggle('no-term', !def.terminal);
       updateHintBadge();
       clearOverlays();
       terminal.reset();
