@@ -36,8 +36,8 @@
 
   // 過關 → 結算彈窗的延遲：留時間讀完最後一個指令的輸出與船長收尾金句
   // （等待期間畫面會出現「查看結算」鈕，等不及可直接按）
-  var RESULT_DELAY_MS = 5000;
-  var RESULT_DELAY_LAST_MS = 6500;   // 最終關的艦隊啟航演出較長
+  var RESULT_DELAY_MS = 8000;
+  var RESULT_DELAY_LAST_MS = 9500;   // 最終關的艦隊啟航演出較長
 
   // ---- 終端機 ----
   var TERMINAL = {
