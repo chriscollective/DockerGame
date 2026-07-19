@@ -439,3 +439,21 @@
   transition: opacity 0.5s ease;
 }
 .stage-caption.on { opacity: 1; }
+
+/* ===== 內線電話線（同一條自訂 network 的貨櫃間實體連線） ===== */
+.net-wires { position: absolute; inset: 0; pointer-events: none; }
+.net-wires svg { width: 100%; height: 100%; display: block; overflow: visible; }
+.net-wire {
+  fill: none;
+  stroke: rgba(167, 139, 250, 0.8);
+  stroke-width: 2;
+  stroke-linecap: round;
+  stroke-dasharray: 7 6;
+  filter: drop-shadow(0 0 5px rgba(167, 139, 250, 0.55));
+  animation: wire-flow 1.5s linear infinite;   /* 虛線流動＝訊號在內線上跑 */
+}
+.net-plug {
+  fill: #a78bfa;
+  filter: drop-shadow(0 0 4px rgba(167, 139, 250, 0.9));
+}
+@keyframes wire-flow { to { stroke-dashoffset: -13; } }

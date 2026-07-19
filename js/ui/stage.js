@@ -59,12 +59,14 @@
       var shelf = el('div', 'shelf', '<div class="shelf-title">藍圖架 · images</div>');
       sc.appendChild(shelf);
       var crates = el('div', 'crate-row');
+      var wires = el('div', 'net-wires');
+      crates.appendChild(wires);
       sc.appendChild(crates);
       var vaults = el('div', 'vaults');
       sc.appendChild(vaults);
       var caption = el('div', 'stage-caption');
       sc.appendChild(caption);
-      return { crane: crane, shelf: shelf, crates: crates, vaults: vaults, caption: caption, scene: sc };
+      return { crane: crane, shelf: shelf, crates: crates, wires: wires, vaults: vaults, caption: caption, scene: sc };
     }
 
     // ---------- 貨櫃 ----------
@@ -88,6 +90,7 @@
       if (animated) { d.classList.add('dropping'); root.DG.audio.play('place'); }
       refs.crates.appendChild(d);
       crateEls[c.id] = d;
+      scheduleWires();
       return d;
     }
 
@@ -98,17 +101,53 @@
       d.classList.toggle('netted', !!(c.network && c.network !== 'bridge'));
       var stEl = d.querySelector('.crate-status');
       if (stEl) { stEl.textContent = statusTag(c); }
+      scheduleWires();
     }
 
     function removeCrate(c, animated) {
       var d = crateEls[c.id];
       if (!d) { return; }
       delete crateEls[c.id];
-      if (!animated) { d.remove(); return; }
+      if (!animated) { d.remove(); scheduleWires(); return; }
       d.classList.remove('dropping');
       d.classList.add('removing');
-      setTimeout(function () { d.remove(); }, 850);
+      setTimeout(function () { d.remove(); drawWires(); }, 850);
+      scheduleWires();
     }
+
+    // ---------- 內線電話線（同一條自訂 network 的貨櫃間拉實體線纜） ----------
+    var wireTimer = null;
+    function drawWires() {
+      var groups = {};
+      engine.state.containers.forEach(function (c) {
+        var d = crateEls[c.id];
+        if (!d || !c.network || c.network === 'bridge') { return; }
+        (groups[c.network] = groups[c.network] || []).push(d);
+      });
+      var svg = '';
+      Object.keys(groups).forEach(function (net) {
+        var members = groups[net].sort(function (a, b) { return a.offsetLeft - b.offsetLeft; });
+        for (var i = 0; i + 1 < members.length; i++) {
+          var a = members[i], b = members[i + 1];
+          var x1 = a.offsetLeft + a.offsetWidth / 2, y1 = a.offsetTop + 4;
+          var x2 = b.offsetLeft + b.offsetWidth / 2, y2 = b.offsetTop + 4;
+          // 架空拉線：從櫃頂向上拱過兩櫃之間，才不會被貨櫃本體遮住
+          var liftY = Math.min(y1, y2) - Math.min(46, 26 + (x2 - x1) * 0.05);
+          var cx1 = x1 + (x2 - x1) / 3, cx2 = x2 - (x2 - x1) / 3;
+          svg += '<path class="net-wire" d="M' + x1 + ' ' + y1 +
+            ' C' + cx1 + ' ' + liftY + ', ' + cx2 + ' ' + liftY + ', ' + x2 + ' ' + y2 + '"/>' +
+            '<circle class="net-plug" cx="' + x1 + '" cy="' + y1 + '" r="3.2"/>' +
+            '<circle class="net-plug" cx="' + x2 + '" cy="' + y2 + '" r="3.2"/>';
+        }
+      });
+      refs.wires.innerHTML = svg ? '<svg width="100%" height="100%">' + svg + '</svg>' : '';
+    }
+    function scheduleWires() {
+      requestAnimationFrame(drawWires);
+      clearTimeout(wireTimer);
+      wireTimer = setTimeout(drawWires, 950);   // 吊放/移除動畫落定後再校正一次錨點
+    }
+    root.addEventListener('resize', scheduleWires);
 
     // ---------- 藍圖架 / 保險庫 ----------
     function renderShelf() {
