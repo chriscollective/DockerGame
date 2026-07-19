@@ -1,6 +1,6 @@
 # Docker 大航海 — The Container Voyage
 
-互動式 Docker 教學網頁遊戲。你是「鯨魚港」的貨櫃見習生，跟著鯨魚船長從 `hello-world` 一路學到 `docker compose`，晉升艦隊指揮官。
+互動式 Docker 教學網頁遊戲。你是「鯨魚港」的貨櫃見習生，跟著鯨魚船長從 `hello-world` 一路學到 `docker compose`，最終獲授「鯨魚港港務長（Harbour Master）」。
 
 ## 怎麼玩
 
@@ -21,8 +21,8 @@
 | 6 | 深入貨櫃 | `logs` / `exec` / `--name` / `-e` 除錯 |
 | 7 | 不沉的保險庫 | volume 與資料持久化 |
 | 8 | 藍圖設計師 | Dockerfile、layer、build cache |
-| 9 | 開闢航道 | network、容器名 DNS |
-| 10 | 艦隊指揮官 | docker compose 總整合 |
+| 9 | 開通內線 | network、容器名 DNS |
+| 10 | 港務長 | docker compose 總整合 |
 
 玩法：在模擬終端機打真實的 docker 指令（行為擬真，含錯誤訊息）、港口舞台即時視覺化容器狀態，穿插拖拉小遊戲、星等、XP、知識徽章圖鑑。
 

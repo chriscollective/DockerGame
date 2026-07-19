@@ -103,7 +103,7 @@
         '寫成 <code>mode</code> 等於沒設；② <b>image 名稱一律放在指令最後面</b>——' +
         '所有旗標（<code>-d</code>、<code>-p</code>、<code>--name</code>、<code>-e</code>…）都要寫在 image 前面，' +
         'image 後面的字會被當成「容器內要執行的指令」。</p>',
-      map: '<b>港口比喻</b>：logs＝貨櫃的航海日誌；exec＝提燈進櫃檢查；-e＝出航前塞給船員的指令條。'
+      map: '<b>港口比喻</b>：logs＝貨櫃的工作日誌；exec＝提燈進櫃檢查；-e＝裝櫃時放進去的一張<b>工作單</b>，櫃裡的程式開工前會先讀它。'
     },
     outro: '除錯三連：logs 看線索 → exec 進現場 → 修正條件（-e）重新出航。',
     setup: function (ctx) {
@@ -179,7 +179,7 @@
         '<p>容器拆了，volume 還在；新容器掛上同一個 volume，資料原封不動。</p>' +
         '<p>本關的 harbor-db 支援兩個小指令：<code>docker exec db store <貨物></code> 存貨、' +
         '<code>docker exec db list</code> 盤點。</p>',
-      map: '<b>港口比喻</b>：volume＝獨立於貨櫃的防水保險庫，沉船了它也會自己浮起來，等下一艘掛載。'
+      map: '<b>港口比喻</b>：volume＝獨立存放在岸上的防水保險庫——貨櫃被銷毀（rm）也動不到它，等下一個貨櫃來掛載。'
     },
     outro: '容器可拋棄、資料不可拋棄——重要的東西一律放 volume。',
     setup: function (ctx) {
@@ -266,7 +266,7 @@
         },
         onDone: function (ctx) {
           ctx.stage.renderVaults('treasure');
-          ctx.stage.caption('黃金完好無缺！保險庫從沉船中浮起——這就是 volume。', 5200);
+          ctx.stage.caption('黃金完好無缺！貨櫃拆了，保險庫還完好留在岸上——這就是 volume。', 5200);
           ctx.stage.burst(88, 70, 22, ['#5cf2a5', '#ffd166', '#a7ffd0']);
           root.DG.audio.play('badge');
         } }
