@@ -326,14 +326,23 @@
   font-size: 11px;
 }
 .vm-ship .vs-os { color: var(--rose); }
+/* 貨櫃車道：共用船底沉在最下方，貨櫃由下往上堆在甲板上 */
+.ct-lane .fleet {
+  flex-direction: column-reverse;
+  flex-wrap: nowrap;
+  justify-content: flex-start;
+  gap: 5px;
+}
 .ct-base {
-  width: 100%; padding: 8px 12px;
-  border-radius: 10px;
-  background: linear-gradient(180deg, #123a5c, #0c2a44);
+  width: 100%; padding: 9px 12px 11px;
+  border-radius: 4px 4px 12px 12px;
+  background: linear-gradient(180deg, #16456e, #0a2036);
   border: 1px solid rgba(89, 200, 255, 0.4);
+  border-top: 2px solid rgba(89, 200, 255, 0.55);
   font-size: 11px;
   color: var(--cyan);
   text-align: center;
+  box-shadow: 0 6px 14px -6px rgba(0, 0, 0, 0.6);
 }
 /* 貨櫃：波浪鋼板 + 兩道櫃門把手，堆疊在共用船底上 */
 .ct-crate {

@@ -29,7 +29,7 @@
 
   function buildLane(kind) {
     var isVM = kind === 'vm';
-    var lane = h('div', 'lane' + (isVM ? ' active-lane' : ''));
+    var lane = h('div', 'lane' + (isVM ? ' active-lane' : ' ct-lane'));
     lane.innerHTML =
       '<h4>' + (isVM ? '傳統大船（虛擬機 VM）' : '貨櫃船（Container）') +
       '<span class="lane-tag">' + (isVM ? '每件貨 = 造一艘船' : '共用船底 = 共用 kernel') + '</span></h4>' +
