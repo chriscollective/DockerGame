@@ -4,16 +4,15 @@
  * script op: {t:'line',text,cls} | {t:'pull',ref,layers,cached} | {t:'gap'}
  */
 (function (root, factory) {
-  var deps;
   if (typeof module !== 'undefined' && module.exports) {
-    deps = { CONFIG: require('./config.js') };
-    module.exports = factory(deps.CONFIG);
+    module.exports = factory(require('./config.js'), require('./i18n.js'));
   } else {
     root.DG = root.DG || {};
-    root.DG.createCLI = factory(root.DG.CONFIG).createCLI;
+    root.DG.createCLI = factory(root.DG.CONFIG, root.DG).createCLI;
   }
-}(typeof globalThis !== 'undefined' ? globalThis : this, function (CONFIG) {
+}(typeof globalThis !== 'undefined' ? globalThis : this, function (CONFIG, i18n) {
   'use strict';
+  var t = i18n.t;
 
   function tokenize(input) {
     var out = [];
@@ -142,7 +141,8 @@
       if (!args.length) {
         return errRes({ cmd: 'run' },
           '"docker run" requires at least 1 argument.' + RUN_USAGE,
-          '「docker run」後面要接一個藍圖（image）名字，起重機才知道要組哪種貨櫃。');
+          t({ zh: '「docker run」後面要接一個藍圖（image）名字，起重機才知道要組哪種貨櫃。',
+            en: '"docker run" needs a blueprint (image) name after it, so the crane knows which kind of container to assemble.' }));
       }
       var o = parseRunFlags(args);
       if (o.err) { return errRes({ cmd: 'run' }, o.err, tipForFlagError(o.err)); }
@@ -153,9 +153,13 @@
         return errRes({ cmd: 'run', image: o.image },
           'docker: Error response from daemon: failed to create task for container: ' +
           'exec: "' + o.rest[0] + '": executable file not found in $PATH.',
-          '旗標放錯位置了！docker run 的格式是 <code>docker run [旗標…] image</code>——' +
-          'image 一律放在<b>最後面</b>。image 後面的字會被當成「容器裡要執行的指令」，' +
-          '所以 <code>' + o.rest[0] + '</code> 被當成程式名拿去執行了。把旗標全部移到 image 前面再試一次。');
+          t({ zh: '旗標放錯位置了！docker run 的格式是 <code>docker run [旗標…] image</code>——' +
+            'image 一律放在<b>最後面</b>。image 後面的字會被當成「容器裡要執行的指令」，' +
+            '所以 <code>{cmd}</code> 被當成程式名拿去執行了。把旗標全部移到 image 前面再試一次。',
+            en: 'A flag is in the wrong place! docker run reads as <code>docker run [flags…] image</code>—' +
+            'the image always comes <b>last</b>. Anything after the image is treated as "a command to run inside ' +
+            'the container", so <code>{cmd}</code> got executed as a program name. Move every flag in front of the image and try again.' },
+            { cmd: o.rest[0] }));
       }
       var res = engine.run(o);
       var parsed = { cmd: 'run', image: o.image, opts: o };
@@ -172,7 +176,8 @@
       else {
         script = script.concat(lines(c.logs, 'out'));
         script.push({ t: 'line',
-          text: '（沒加 -d：容器在前景執行，會佔住終端機直到 Ctrl-C——長駐服務通常加 -d 讓它在背景跑）',
+          text: t({ zh: '（沒加 -d：容器在前景執行，會佔住終端機直到 Ctrl-C——長駐服務通常加 -d 讓它在背景跑）',
+            en: '(no -d: the container runs in the foreground and holds the terminal until Ctrl-C — long-running services usually add -d to run in the background)' }),
           cls: 'dim' });
       }
       return okRes(parsed, script, { container: c, engineResult: res });
@@ -181,22 +186,30 @@
     function runErrorRes(parsed, res) {
       var tip = null;
       if (res.conflict && res.error.indexOf('port is already allocated') >= 0) {
-        tip = '這條管線（主機 port）已經被別的貨櫃接走了！一個主機 port 同時只能綁一個容器——' +
-          '換一個主機 port（冒號左邊那個數字），或先 stop 佔用的貨櫃。';
+        tip = t({ zh: '這條管線（主機 port）已經被別的貨櫃接走了！一個主機 port 同時只能綁一個容器——' +
+          '換一個主機 port（冒號左邊那個數字），或先 stop 佔用的貨櫃。',
+          en: 'This pipe (host port) is already taken by another container! A host port can bind only one ' +
+          'container at a time — use a different host port (the number left of the colon), or stop the container holding it first.' });
       } else if (res.conflict && res.error.indexOf('Conflict. The container name') >= 0) {
-        tip = '這個名字已經有貨櫃在用了。名字是唯一的——先 docker rm 舊的，或換個 --name。';
+        tip = t({ zh: '這個名字已經有貨櫃在用了。名字是唯一的——先 docker rm 舊的，或換個 --name。',
+          en: 'That name is already in use by a container. Names are unique — docker rm the old one first, or pick a different --name.' });
       } else if (res.conflict && res.error.indexOf('network') >= 0) {
-        tip = '這條內線還沒拉。先 docker network create 建立它。';
+        tip = t({ zh: '這條內線還沒拉。先 docker network create 建立它。',
+          en: 'That private line has not been laid yet. Create it first with docker network create.' });
       } else if (res.imageMissing) {
-        tip = '藍圖倉庫裡沒有這個名字的藍圖。檢查拼字，或用 help 看看本港認得哪些藍圖。';
+        tip = t({ zh: '藍圖倉庫裡沒有這個名字的藍圖。檢查拼字，或用 help 看看本港認得哪些藍圖。',
+          en: 'The registry has no blueprint by that name. Check the spelling, or use help to see which blueprints this harbor knows.' });
       }
       return errRes(parsed, res.error, tip);
     }
 
     function tipForFlagError(err) {
-      if (err.indexOf('publish') >= 0) { return '-p 的格式是「主機port:容器port」，例如 -p 8080:80。'; }
-      if (err.indexOf('volume specification') >= 0) { return '-v 的格式是「保險庫名:容器內路徑」，例如 -v treasure:/data。'; }
-      return '這個旗標本港的起重機不認得。用 help 查目前學過的指令。';
+      if (err.indexOf('publish') >= 0) { return t({ zh: '-p 的格式是「主機port:容器port」，例如 -p 8080:80。',
+        en: '-p uses the form "hostPort:containerPort", e.g. -p 8080:80.' }); }
+      if (err.indexOf('volume specification') >= 0) { return t({ zh: '-v 的格式是「保險庫名:容器內路徑」，例如 -v treasure:/data。',
+        en: '-v uses the form "vaultName:/path-in-container", e.g. -v treasure:/data.' }); }
+      return t({ zh: '這個旗標本港的起重機不認得。用 help 查目前學過的指令。',
+        en: "This harbor's crane doesn't recognise that flag. Use help to see the commands you've learned." });
     }
 
     // ---------- docker ps / images ----------
@@ -230,7 +243,8 @@
       var res = engine.pull(args[0]);
       var parsed = { cmd: 'pull', image: args[0] };
       if (!res.ok) {
-        return errRes(parsed, res.error, '藍圖倉庫查無此藍圖——檢查名字拼對了嗎？tag 存在嗎？');
+        return errRes(parsed, res.error, t({ zh: '藍圖倉庫查無此藍圖——檢查名字拼對了嗎？tag 存在嗎？',
+          en: 'The registry has no such blueprint — did you spell the name right? Does the tag exist?' }));
       }
       if (res.alreadyExists) {
         var r0 = engine.parseRef(args[0]);
@@ -263,13 +277,16 @@
 
     function lifecycleTip(sub, res) {
       if (res.running) {
-        return '這個貨櫃還在運轉中，直接拆會出事！先 docker stop 讓它停下，或確定要強拆就用 docker rm -f。';
+        return t({ zh: '這個貨櫃還在運轉中，直接拆會出事！先 docker stop 讓它停下，或確定要強拆就用 docker rm -f。',
+          en: 'This container is still running — tearing it down as-is will cause trouble! docker stop it first, or if you really mean to force it, use docker rm -f.' });
       }
       if (res.error.indexOf('No such container') >= 0) {
-        return '港區找不到這個名字的貨櫃。用 docker ps -a 看看所有貨櫃的正確名字。';
+        return t({ zh: '港區找不到這個名字的貨櫃。用 docker ps -a 看看所有貨櫃的正確名字。',
+          en: 'No container by that name in the yard. Use docker ps -a to see the exact names of every container.' });
       }
       if (res.error.indexOf('port is already allocated') >= 0) {
-        return '它綁的管線（port）現在被別的貨櫃佔走了，先處理佔用的那個。';
+        return t({ zh: '它綁的管線（port）現在被別的貨櫃佔走了，先處理佔用的那個。',
+          en: 'The pipe (port) it binds is currently taken by another container — deal with that one first.' });
       }
       return null;
     }
@@ -281,7 +298,8 @@
       if (!c) {
         return errRes({ cmd: 'logs', ref: refs[0] },
           'Error response from daemon: No such container: ' + refs[0],
-          '找不到這個貨櫃。docker ps -a 查一下名字。');
+          t({ zh: '找不到這個貨櫃。docker ps -a 查一下名字。',
+            en: 'No such container. Check the name with docker ps -a.' }));
       }
       engine.emit('logs', { container: c });
       return okRes({ cmd: 'logs', ref: c.name }, lines(c.logs, 'out'), { container: c });
@@ -298,7 +316,8 @@
       var argv = rest.slice(1);
       if (!ref || !argv.length) {
         return errRes({ cmd: 'exec' }, '"docker exec" requires at least 2 arguments.',
-          '格式：docker exec [-it] <貨櫃名> <指令>。');
+          t({ zh: '格式：docker exec [-it] <貨櫃名> <指令>。',
+            en: 'Format: docker exec [-it] <container-name> <command>.' }));
       }
       if ((argv[0] === 'sh' || argv[0] === 'bash') && it) {
         var c = engine.findContainer(ref);
@@ -306,12 +325,14 @@
         if (c.status !== 'running') {
           return errRes({ cmd: 'exec', ref: ref },
             'Error response from daemon: container ' + c.id.slice(0, 12) + ' is not running',
-            'exec 只能進入「運行中」的貨櫃——它現在是停止狀態，先 docker start 它。');
+            t({ zh: 'exec 只能進入「運行中」的貨櫃——它現在是停止狀態，先 docker start 它。',
+              en: 'exec can only enter a "running" container — this one is stopped, so docker start it first.' }));
         }
         st.shell = c.name;
         engine.emit('shell:enter', { container: c });
         return okRes({ cmd: 'exec', ref: c.name, shell: true },
-          lines(['(進入貨櫃內部 shell — 輸入 exit 可離開)'], 'dim'), { shell: true });
+          lines([t({ zh: '(進入貨櫃內部 shell — 輸入 exit 可離開)',
+            en: "(entered the container's shell — type exit to leave)" })], 'dim'), { shell: true });
       }
       var res = engine.execCmd(ref, argv);
       var parsed = { cmd: 'exec', ref: ref, argv: argv, result: res };
@@ -320,10 +341,13 @@
     }
 
     function execTip(res) {
-      if (res.notRunning) { return 'exec 需要貨櫃在運行中。先 docker start 它，或 docker ps -a 確認狀態。'; }
+      if (res.notRunning) { return t({ zh: 'exec 需要貨櫃在運行中。先 docker start 它，或 docker ps -a 確認狀態。',
+        en: 'exec needs the container to be running. docker start it first, or check its status with docker ps -a.' }); }
       if (res.pingFail) {
-        return 'ping 不到！這兩個貨櫃不在同一條自訂內線上——預設 bridge 的總機沒有通訊錄（DNS），' +
-          '撥名字沒人幫你轉接。拉一條自訂 network 把它們都接上吧。';
+        return t({ zh: 'ping 不到！這兩個貨櫃不在同一條自訂內線上——預設 bridge 的總機沒有通訊錄（DNS），' +
+          '撥名字沒人幫你轉接。拉一條自訂 network 把它們都接上吧。',
+          en: "Can't ping! These two containers aren't on the same custom private line — the default bridge's " +
+          'switchboard has no directory (DNS), so dialling by name reaches no one. Lay a custom network and connect them both.' });
       }
       return null;
     }
@@ -336,18 +360,21 @@
         var name = st.shell;
         st.shell = null;
         engine.emit('shell:exit', { name: name });
-        return okRes({ cmd: 'shell-exit', container: name }, lines(['(已離開貨櫃，回到港口終端機)'], 'dim'));
+        return okRes({ cmd: 'shell-exit', container: name }, lines([t({ zh: '(已離開貨櫃，回到港口終端機)',
+          en: '(left the container, back at the harbor terminal)' })], 'dim'));
       }
       if (argv[0] === 'pwd') { return okRes(parsed, lines(['/app'], 'out')); }
       if (argv[0] === 'help') {
-        return okRes(parsed, lines(['容器內可用：ls、cat <檔名>、pwd、exit'], 'dim'));
+        return okRes(parsed, lines([t({ zh: '容器內可用：ls、cat <檔名>、pwd、exit',
+          en: 'Inside the container: ls, cat <file>, pwd, exit' })], 'dim'));
       }
       var res = engine.execCmd(st.shell, argv);
       parsed.result = res;
       if (!res.ok) {
         return errRes(parsed, res.error,
           res.error.indexOf('not found in $PATH') >= 0
-            ? '這個貨櫃裡是精簡系統，只有最基本的工具：ls、cat、pwd、exit。' : null);
+            ? t({ zh: '這個貨櫃裡是精簡系統，只有最基本的工具：ls、cat、pwd、exit。',
+              en: 'This container runs a minimal system with only the basics: ls, cat, pwd, exit.' }) : null);
       }
       return okRes(parsed, lines(res.output || [], 'out'), { execResult: res });
     }
@@ -365,13 +392,15 @@
       }
       return errRes({ cmd: 'volume' },
         'Usage:  docker volume COMMAND\n\nCommands:\n  create      Create a volume\n  ls          List volumes',
-        'volume 底下要接子指令：docker volume create <名字> 或 docker volume ls。');
+        t({ zh: 'volume 底下要接子指令：docker volume create <名字> 或 docker volume ls。',
+          en: 'volume needs a subcommand: docker volume create <name> or docker volume ls.' }));
     }
 
     function cmdNetwork(args) {
       if (args[0] === 'create' && args[1]) {
         var res = engine.networkCreate(args[1]);
-        if (!res.ok) { return errRes({ cmd: 'network-create', name: args[1] }, res.error, '這條內線已經存在了，直接用它就行。'); }
+        if (!res.ok) { return errRes({ cmd: 'network-create', name: args[1] }, res.error,
+          t({ zh: '這條內線已經存在了，直接用它就行。', en: 'That private line already exists — just use it.' })); }
         // 印出剛建立的 network 完整 ID（ls 會顯示它的前 12 碼，兩者一致）
         return okRes({ cmd: 'network-create', name: args[1] }, lines([res.network.id], 'out'), { network: res.network });
       }
@@ -384,7 +413,8 @@
       }
       return errRes({ cmd: 'network' },
         'Usage:  docker network COMMAND\n\nCommands:\n  create      Create a network\n  ls          List networks',
-        'network 底下要接子指令：docker network create <名字> 或 docker network ls。');
+        t({ zh: 'network 底下要接子指令：docker network create <名字> 或 docker network ls。',
+          en: 'network needs a subcommand: docker network create <name> or docker network ls.' }));
     }
 
     // ---------- build / compose（由關卡注入 context） ----------
@@ -395,12 +425,14 @@
       if (!st.buildCtx) {
         return errRes({ cmd: 'build' },
           'ERROR: unable to prepare context: path "." not found',
-          '這裡還沒有 Dockerfile 可以建造——先在藍圖設計台把指令卡排好。');
+          t({ zh: '這裡還沒有 Dockerfile 可以建造——先在藍圖設計台把指令卡排好。',
+            en: 'There is no Dockerfile to build yet — arrange the instruction cards on the blueprint drafting table first.' }));
       }
       if (!tag || !hasDot) {
         return errRes({ cmd: 'build' },
           'ERROR: docker buildx build requires exactly 1 argument (the build context)\nUsage:  docker build -t NAME .',
-          '建造指令的完整格式：docker build -t <藍圖名> .（最後那個點是建置目錄，別漏了）。');
+          t({ zh: '建造指令的完整格式：docker build -t <藍圖名> .（最後那個點是建置目錄，別漏了）。',
+            en: 'Full build command: docker build -t <blueprint-name> . (the trailing dot is the build directory — don\'t drop it).' }));
       }
       var res = engine.build(tag, st.buildCtx.steps, st.buildCtx.fileVersions);
       var n = res.steps.length;
@@ -420,17 +452,20 @@
       if (!st.composeProject) {
         return errRes({ cmd: 'compose' },
           'no configuration file provided: not found',
-          '還沒有總調度令（docker-compose.yml）——先在調度台把它組出來。');
+          t({ zh: '還沒有總調度令（docker-compose.yml）——先在調度台把它組出來。',
+            en: 'There is no master manifest (docker-compose.yml) yet — assemble it at the dispatch desk first.' }));
       }
       if (!isUp) {
         return errRes({ cmd: 'compose' }, 'unknown docker command: "compose ' + (args[0] || '') + '"',
-          '這一戰用 docker compose up -d 出航。');
+          t({ zh: '這一戰用 docker compose up -d 出航。', en: 'Set sail for this battle with docker compose up -d.' }));
       }
       if (args.indexOf('-d') < 0) {
         // 真實 compose up 不加 -d 會 attach 全部服務日誌並卡住終端機——教學上要求用 -d
         return okRes({ cmd: 'compose-up', detach: false }, lines([
-          '沒加 -d：docker compose up 會 attach 到所有服務、把日誌灌進終端機並卡住（要 Ctrl-C 才停）。',
-          '要讓整組服務在背景長駐，改用：docker compose up -d'
+          t({ zh: '沒加 -d：docker compose up 會 attach 到所有服務、把日誌灌進終端機並卡住（要 Ctrl-C 才停）。',
+            en: 'No -d: docker compose up attaches to every service, floods the terminal with logs, and hangs (Ctrl-C to stop).' }),
+          t({ zh: '要讓整組服務在背景長駐，改用：docker compose up -d',
+            en: 'To keep the whole stack running in the background, use: docker compose up -d' })
         ], 'dim'));
       }
       var res = engine.composeUp(st.composeProject);
@@ -447,11 +482,11 @@
     // ---------- help / 未知指令 ----------
     function cmdHelp() {
       var learned = CONFIG.COMMAND_DEX.filter(function (e) { return e.level <= st.learnedLevel; });
-      var script = [{ t: 'line', text: '── 目前學會的指令 ──', cls: 'dim' }];
+      var script = [{ t: 'line', text: t({ zh: '── 目前學會的指令 ──', en: '── Commands you have learned ──' }), cls: 'dim' }];
       learned.forEach(function (e) {
-        script.push({ t: 'line', text: '  ' + pad(e.cmd, 38) + e.zh, cls: 'help' });
+        script.push({ t: 'line', text: '  ' + pad(t(e.cmd), 38) + t(e.desc), cls: 'help' });
       });
-      script.push({ t: 'line', text: '  ' + pad('clear', 38) + '清空終端機', cls: 'help' });
+      script.push({ t: 'line', text: '  ' + pad('clear', 38) + t({ zh: '清空終端機', en: 'Clear the terminal' }), cls: 'help' });
       return okRes({ cmd: 'help' }, script);
     }
 
@@ -465,7 +500,9 @@
       var near = nearestSub(sub);
       return errRes({ cmd: 'unknown-sub', sub: sub },
         'docker: \'' + sub + '\' is not a docker command.\nSee \'docker --help\'',
-        near ? ('拼字差一點——你是不是想打 docker ' + near + '？') : '這個子指令本港還不認得，輸入 help 看看學過哪些。');
+        near ? t({ zh: '拼字差一點——你是不是想打 docker {near}？', en: 'Almost — did you mean docker {near}?' }, { near: near })
+          : t({ zh: '這個子指令本港還不認得，輸入 help 看看學過哪些。',
+            en: "This harbor doesn't know that subcommand yet — type help to see what you've learned." }));
     }
 
     function nearestSub(sub) {
@@ -507,8 +544,9 @@
       if (head === 'help') { return cmdHelp(); }
       if (head === 'docker') { return dockerDispatch(argv[1], argv.slice(2)); }
       var tip = levenshtein(head, 'docker') <= 2
-        ? '手滑了——是 docker 才對。'
-        : '本港的終端機聽得懂 docker 指令、help 和 clear。';
+        ? t({ zh: '手滑了——是 docker 才對。', en: 'Slip of the finger — it should be docker.' })
+        : t({ zh: '本港的終端機聽得懂 docker 指令、help 和 clear。',
+          en: "This harbor's terminal understands docker commands, help and clear." });
       return errRes({ cmd: 'not-found', head: head }, 'sh: ' + head + ': command not found', tip);
     }
 

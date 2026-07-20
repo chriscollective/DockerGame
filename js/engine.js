@@ -327,7 +327,7 @@
       if (cmd === 'cat') {
         var f = argv[1] || '';
         if (c.files[f] === undefined) {
-          return { ok: false, error: 'cat: ' + (f || '(無檔名)') + ': No such file or directory' };
+          return { ok: false, error: 'cat: ' + (f || '(no file name)') + ': No such file or directory' };
         }
         return { ok: true, output: c.files[f].split('\n'), file: f };
       }

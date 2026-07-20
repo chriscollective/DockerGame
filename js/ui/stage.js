@@ -5,6 +5,7 @@
 (function (root) {
   'use strict';
   var art = root.DG.art;
+  var t = root.DG.t;
 
   var CRATE_HUES = [205, 155, 25, 280, 340, 95, 240, 55];
 
@@ -56,7 +57,7 @@
       sc.appendChild(crane);
       var whale = el('div', 'whale-swim', art.whale(false) + '<div class="spout"></div>');
       sc.appendChild(whale);
-      var shelf = el('div', 'shelf', '<div class="shelf-title">藍圖架 · images</div>');
+      var shelf = el('div', 'shelf', '<div class="shelf-title">' + t({ zh: '藍圖架 · images', en: 'Blueprint shelf · images' }) + '</div>');
       sc.appendChild(shelf);
       var crates = el('div', 'crate-row');
       var wires = el('div', 'net-wires');
@@ -151,7 +152,7 @@
 
     // ---------- 藍圖架 / 保險庫 ----------
     function renderShelf() {
-      refs.shelf.innerHTML = '<div class="shelf-title">藍圖架 · images</div>';
+      refs.shelf.innerHTML = '<div class="shelf-title">' + t({ zh: '藍圖架 · images', en: 'Blueprint shelf · images' }) + '</div>';
       engine.state.images.forEach(function (im) {
         var b = el('div', 'blueprint',
           art.icons.bpSmall + '<span>' + im.repo + '</span><span class="bp-tag">:' + im.tag + '</span>');
@@ -216,7 +217,7 @@
       for (var i = 0; i < 5; i++) {
         ships += '<div class="sail-ship" style="animation-delay:' + (i * 0.16) + 's">' + art.whale(true) + '</div>';
       }
-      veil.innerHTML = '<h2>' + (title || '結業典禮') + '</h2>' +
+      veil.innerHTML = '<h2>' + (title || t({ zh: '結業典禮', en: 'Graduation Ceremony' })) + '</h2>' +
         '<div class="fin-sub">' + (sub || '') + '</div>' +
         '<div class="fleet-sail">' + ships + '</div>';
       mount.appendChild(veil);
@@ -296,11 +297,12 @@
       'container:die': function (d) { updateCrate(d.container); },
       'container:remove': function (d) { removeCrate(d.container, true); },
       'volume:create': function (d) { renderVaults(d.volume.name); root.DG.audio.play('splash'); },
-      'network:create': function (d) { caption('內線開通：' + d.network.name); },
+      'network:create': function (d) { caption(t({ zh: '內線開通：{name}', en: 'Private line opened: {name}' }, { name: d.network.name })); },
       'ping': function (d) { pingBeam(d.from, d.to, d.ok); },
       'cargo:store': function (d) {
-        caption(d.persistent ? ('貨物「' + d.item + '」已存入保險庫 ' + d.volume)
-          : ('貨物「' + d.item + '」存在貨櫃裡（暫時的！）'));
+        caption(d.persistent
+          ? t({ zh: '貨物「{item}」已存入保險庫 {volume}', en: 'Cargo "{item}" stored in vault {volume}' }, { item: d.item, volume: d.volume })
+          : t({ zh: '貨物「{item}」存在貨櫃裡（暫時的！）', en: 'Cargo "{item}" kept inside the container (temporary!)' }, { item: d.item }));
         burst(d.persistent ? 88 : 50, d.persistent ? 74 : 70, 10, ['#5cf2a5', '#ffd166']);
       },
       'compose:up': function () { fireworks(); root.DG.audio.play('horn'); }
@@ -324,7 +326,7 @@
         '<span class="mb-dot" style="background:#28c840"></span>' +
         '<span class="mb-url">' + url + '</span></div>' +
         '<div class="mb-page"><h2>' + title + '</h2>' + bodyHTML + '</div>' +
-        '<button class="mb-close" title="關閉">✕</button>');
+        '<button class="mb-close" title="' + t({ zh: '關閉', en: 'Close' }) + '">✕</button>');
       browser.querySelector('.mb-close').addEventListener('click', hideBrowser);
       refs.scene.appendChild(browser);
       requestAnimationFrame(function () {

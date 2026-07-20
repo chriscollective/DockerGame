@@ -7,7 +7,7 @@
   var CONFIG = root.DG.CONFIG;
 
   function blank() {
-    return { levels: {}, badges: [], xp: 0, muted: false, startedAt: Date.now(), v: 1 };
+    return { levels: {}, badges: [], xp: 0, muted: false, lang: null, startedAt: Date.now(), v: 1 };
   }
 
   function load() {
@@ -82,6 +82,10 @@
     persist();
   }
 
+  // 語言偏好：null = 尚未選過（交給 i18n 依瀏覽器語言自動偵測）
+  function getLang() { return save.lang || null; }
+  function setLang(l) { save.lang = l; persist(); }
+
   root.DG.store = {
     get data() { return save; },
     completeLevel: completeLevel,
@@ -90,6 +94,8 @@
     hasAnyProgress: hasAnyProgress,
     rank: rank,
     resetAll: resetAll,
-    setMuted: setMuted
+    setMuted: setMuted,
+    getLang: getLang,
+    setLang: setLang
   };
 }(typeof globalThis !== 'undefined' ? globalThis : this));
