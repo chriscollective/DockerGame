@@ -6,6 +6,7 @@
   var CONFIG = root.DG.CONFIG;
   var art = root.DG.art;
   var h = root.DG.h;
+  var t = root.DG.t;
 
   var engine, cli, stage, terminal;
   var stageCore, questScroll, tipBubble;
@@ -45,29 +46,30 @@
   // ---------- 任務面板渲染 ----------
   function capBubble(html, tipMode) {
     var d = h('div', 'dialogue' + (tipMode ? ' tip-mode' : ''));
+    var name = tipMode ? t({ zh: '船長的提點', en: "Captain's Tip" }) : t({ zh: '鯨魚船長', en: 'Captain Whale' });
     d.innerHTML = '<div class="cap-avatar">' + art.whale(true) + '</div>' +
-      '<div class="bubble"><div class="cap-name">' + (tipMode ? '船長的提點' : '鯨魚船長') + '</div>' + html + '</div>';
+      '<div class="bubble"><div class="cap-name">' + name + '</div>' + html + '</div>';
     return d;
   }
 
   function renderQuest(def) {
     questScroll.innerHTML = '';
     def.story.forEach(function (line, i) {
-      var b = capBubble(line);
+      var b = capBubble(t(line));
       b.style.animationDelay = (i * 0.24) + 's';
       questScroll.appendChild(b);
     });
     var tc = h('div', 'teach-card');
-    tc.innerHTML = '<div class="tc-head">教學卡 · ' + def.teach.title + '</div>' +
-      '<div class="tc-body">' + def.teach.html +
-      '<div class="tc-map">' + def.teach.map + '</div></div>';
+    tc.innerHTML = '<div class="tc-head">' + t({ zh: '教學卡 · ', en: 'Teaching Card · ' }) + t(def.teach.title) + '</div>' +
+      '<div class="tc-body">' + t(def.teach.html) +
+      '<div class="tc-map">' + t(def.teach.map) + '</div></div>';
     questScroll.appendChild(tc);
 
-    var wrap = h('div', 'objectives', '<div class="obj-title">任務目標</div>');
+    var wrap = h('div', 'objectives', '<div class="obj-title">' + t({ zh: '任務目標', en: 'Objectives' }) + '</div>');
     current.objEls = def.objectives.map(function (obj, i) {
       var o = h('div', 'objective' + (i === 0 ? ' active' : ''));
       o.innerHTML = '<span class="check-icon">' + art.check() + '</span>' +
-        '<span class="obj-text">' + obj.text + '</span>';
+        '<span class="obj-text">' + t(obj.text) + '</span>';
       wrap.appendChild(o);
       return o;
     });
@@ -81,7 +83,7 @@
       questScroll.appendChild(tipBubble);
     } else {
       tipBubble.querySelector('.bubble').innerHTML =
-        '<div class="cap-name">船長的提點</div>' + html;
+        '<div class="cap-name">' + t({ zh: '船長的提點', en: "Captain's Tip" }) + '</div>' + html;
       questScroll.appendChild(tipBubble);   // 移到最下方
     }
     tipBubble.classList.remove('rise');
@@ -99,14 +101,17 @@
     var obj = current.def.objectives[idx];
     var lv = current.hintLevels[idx];
     if (lv >= 3) {
-      showTip('（提示已全部給過了）' + obj.hints[2]);
+      showTip(t({ zh: '（提示已全部給過了）', en: '(all hints already given) ' }) + t(obj.hints[2]));
       return;
     }
     current.hintLevels[idx] = lv + 1;
     current.hintsUsed++;
     updateHintBadge();
-    var label = ['先給個方向', '給你指令骨架', '完整答案'][lv];
-    showTip((auto ? '看你卡了一會兒——' : '') + '提示 ' + (lv + 1) + '/3（' + label + '）：<br>' + obj.hints[lv]);
+    var label = [t({ zh: '先給個方向', en: 'a nudge' }), t({ zh: '給你指令骨架', en: 'the command skeleton' }),
+      t({ zh: '完整答案', en: 'the full answer' })][lv];
+    var lead = auto ? t({ zh: '看你卡了一會兒——', en: "Looks like you're stuck — " }) : '';
+    showTip(lead + t({ zh: '提示 {n}/3（{label}）：<br>', en: 'Hint {n}/3 ({label}):<br>' },
+      { n: lv + 1, label: label }) + t(obj.hints[lv]));
     root.DG.audio.play('click');
   }
 
@@ -162,7 +167,8 @@
       if (current.offTopic >= CONFIG.WRONG_TRIES_BEFORE_HINT &&
           current.hintLevels[current.objIdx] === 0) {
         current.offTopic = 0;
-        showTip('這個指令有跑成功，但還沒完成目前的「任務目標」。<br>再看一眼上方的任務目標，或按右上角 💡 要一個提示。');
+        showTip(t({ zh: '這個指令有跑成功，但還沒完成目前的「任務目標」。<br>再看一眼上方的任務目標，或按右上角 💡 要一個提示。',
+          en: 'That command ran fine, but it has not completed the current objective yet.<br>Take another look at the objectives above, or tap 💡 in the top-right for a hint.' }));
       }
     }
   }
@@ -171,7 +177,7 @@
   function levelComplete() {
     current.completed = true;
     var def = current.def;
-    questScroll.appendChild(capBubble('<b>過關！</b>' + def.outro));
+    questScroll.appendChild(capBubble('<b>' + t({ zh: '過關！', en: 'Cleared!' }) + '</b>' + t(def.outro)));
     questScroll.scrollTop = questScroll.scrollHeight;
     root.DG.audio.play('fanfare');
     stage.burst(50, 40, 26);
@@ -194,7 +200,7 @@
     // 玩家也可以按「查看結算」直接看，不必等滿
     var token = current;
     var btn = h('button', 'btn primary result-now-btn',
-      '查看結算<span class="btn-orb">➜</span>');
+      t({ zh: '查看結算', en: 'See results' }) + '<span class="btn-orb">➜</span>');
     var shown = false;
     function showNow() {
       if (shown) { return; }
@@ -256,7 +262,7 @@
       var stale = document.querySelector('.result-now-btn');
       if (stale) { stale.remove(); }
       document.getElementById('lt-num').textContent = 'LEVEL ' + def.id + ' / ' + CONFIG.LEVEL_COUNT;
-      document.getElementById('lt-title').textContent = def.name + '　·　' + def.topic;
+      document.getElementById('lt-title').textContent = t(def.name) + '　·　' + t(def.topic);
       // 無終端機的關卡：把終端機列收成薄鎖定條，多出的高度全給中間舞台
       document.getElementById('screen-level').classList.toggle('no-term', !def.terminal);
       updateHintBadge();
@@ -273,7 +279,8 @@
       }, 1100);
       if (def.terminal) {
         terminal.setLocked(false);
-        terminal.print('鯨魚港終端機 — 輸入 help 可查看目前學會的指令', 'dim');
+        terminal.print(t({ zh: '鯨魚港終端機 — 輸入 help 可查看目前學會的指令',
+          en: 'Whale Harbor terminal — type help to see the commands you have learned' }), 'dim');
         terminal.focus();
       } else {
         terminal.setLocked(true);
@@ -283,23 +290,25 @@
   }
 
   // ---------- 初始化 ----------
+  var renderMute, renderLangBtn;
   function wireTopbar() {
     document.getElementById('btn-hint').addEventListener('click', function () { revealHint(false); });
     document.getElementById('btn-map').addEventListener('click', function () {
       var inLevel = document.getElementById('screen-level').classList.contains('on');
       if (inLevel && current && !current.completed) {
-        root.DG.screens.showConfirm('離開這一關？',
-          '目前這關的進度會重置，回港後要從頭再來一次。確定離開嗎？', goMap);
+        root.DG.screens.showConfirm(t({ zh: '離開這一關？', en: 'Leave this level?' }),
+          t({ zh: '目前這關的進度會重置，回港後要從頭再來一次。確定離開嗎？',
+            en: "This level's progress will reset — you'll start it over next time. Leave anyway?" }), goMap);
       } else {
         goMap();
       }
     });
     document.getElementById('btn-dex').addEventListener('click', goBadges);
     var muteBtn = document.getElementById('btn-mute');
-    function renderMute() {
+    renderMute = function () {
       muteBtn.innerHTML = root.DG.audio.isMuted() ? art.icons.muted : art.icons.sound;
-      muteBtn.title = root.DG.audio.isMuted() ? '開啟音效' : '靜音';
-    }
+      muteBtn.title = root.DG.audio.isMuted() ? t({ zh: '開啟音效', en: 'Unmute' }) : t({ zh: '靜音', en: 'Mute' });
+    };
     muteBtn.addEventListener('click', function () {
       var m = !root.DG.audio.isMuted();
       root.DG.audio.setMuted(m);
@@ -307,9 +316,56 @@
       renderMute();
     });
     renderMute();
+
+    var langBtn = document.getElementById('btn-lang');
+    renderLangBtn = function () {
+      var en = root.DG.getLang() === 'en';
+      langBtn.textContent = en ? '中' : 'EN';
+      langBtn.title = en ? '切換成中文' : 'Switch to English';
+    };
+    langBtn.addEventListener('click', function () {
+      root.DG.setLang(root.DG.getLang() === 'zh' ? 'en' : 'zh');
+      root.DG.audio.play('click');
+    });
+    renderLangBtn();
+  }
+
+  // 語言切換：重繪當前畫面 + topbar 動態鈕（靜態 chrome 由 i18n.setLang 內部處理）
+  function onLangChange() {
+    if (renderLangBtn) { renderLangBtn(); }
+    if (renderMute) { renderMute(); }
+    var active = document.querySelector('.screen.on');
+    if (!active) { return; }
+    if (active.id === 'screen-map') {
+      root.DG.screens.buildMap(document.getElementById('screen-map'), startLevel, goBadges);
+    } else if (active.id === 'screen-badges') {
+      root.DG.screens.buildBadges(document.getElementById('screen-badges'), goMap);
+    } else if (active.id === 'screen-title' && titleCtl) {
+      titleCtl.refresh();
+    } else if (active.id === 'screen-level' && current) {
+      relevelText();
+    }
+  }
+
+  // 關卡進行中切語言：重繪任務面板文字並還原已完成/進行中狀態（小遊戲 DOM 與終端機歷史維持原樣）
+  function relevelText() {
+    var def = current.def;
+    document.getElementById('lt-title').textContent = t(def.name) + '　·　' + t(def.topic);
+    renderQuest(def);
+    if (stage && stage.sync) { stage.sync(); }   // 港口舞台標籤（藍圖架/保險庫）跟著切語言重繪
+    current.objEls.forEach(function (el, idx) {
+      el.classList.remove('active', 'done');
+      if (idx < current.objIdx) { el.classList.add('done'); }
+      else if (idx === current.objIdx && !current.completed) { el.classList.add('active'); }
+    });
+    if (current.completed) {
+      questScroll.appendChild(capBubble('<b>' + t({ zh: '過關！', en: 'Cleared!' }) + '</b>' + t(def.outro)));
+    }
   }
 
   function init() {
+    root.DG.initLang();
+    root.DG.onLangChange(onLangChange);
     root.DG.audio.setMuted(!!root.DG.store.data.muted);
 
     engine = root.DG.createEngine();
@@ -331,8 +387,9 @@
       function () { startLevel(1); },
       goMap,
       function () {
-        root.DG.screens.showConfirm('重新開始？',
-          '這會清除所有進度：關卡星等、XP 與徽章圖鑑。確定要從頭啟航嗎？',
+        root.DG.screens.showConfirm(t({ zh: '重新開始？', en: 'Start over?' }),
+          t({ zh: '這會清除所有進度：關卡星等、XP 與徽章圖鑑。確定要從頭啟航嗎？',
+            en: 'This clears all progress: level stars, XP and the badge codex. Set sail from the start?' }),
           function () {
             root.DG.store.resetAll();
             titleCtl.refresh();
